@@ -2,6 +2,7 @@ import { AppBar, Toolbar, Typography, Button, Box } from '@mui/material';
 import { useAuthStore } from '@ui/store/authStore';
 import { ContactsListScreen } from '@ui/screens/ContactsListScreen';
 import { RemindersPanel } from '@ui/components/RemindersPanel';
+import { SyncStatusChip } from '@ui/components/SyncStatusChip';
 
 /** 首頁殼層：暫時的頂部列 + 登出（完整導覽見 spec.md §11.2，後續功能再補）。 */
 export function HomeScreen() {
@@ -14,6 +15,7 @@ export function HomeScreen() {
         <Toolbar sx={{ justifyContent: 'space-between' }}>
           <Typography variant="h6">Linka</Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <SyncStatusChip />
             <Typography variant="body2" color="text.secondary">
               {user.email}
             </Typography>
