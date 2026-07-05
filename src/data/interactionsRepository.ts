@@ -47,6 +47,14 @@ export function subscribeInteractionsForContact(
   });
 }
 
+/** 訂閱使用者所有互動紀錄（不限單一聯絡人），供 §11.4 列表久未聯絡色彩警示計算「每位聯絡人最近互動日期」使用。 */
+export function subscribeAllInteractions(uid: string, onChange: (interactions: Interaction[]) => void): () => void {
+  const q = query(interactionsCollection(uid), orderBy('date', 'desc'));
+  return onSnapshot(q, (snapshot) => {
+    onChange(snapshot.docs.map((d) => fromFirestore(d.id, d.data())));
+  });
+}
+
 export async function createInteraction(uid: string, input: NewInteractionInput): Promise<string> {
   const ref = await addDoc(interactionsCollection(uid), {
     ...input,

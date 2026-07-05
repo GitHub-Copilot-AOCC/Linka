@@ -54,6 +54,7 @@
     "setReminder": "設定提醒",
     "interactions": "互動紀錄",
     "suggestedTopics": "建議話題",
+    "longSilenceWarning": "超過 60 天沒有互動紀錄，該找個時間聯絡一下了",
     "moreActions": "更多操作",
     "edit": "編輯",
     "addContact": "新增聯絡人",

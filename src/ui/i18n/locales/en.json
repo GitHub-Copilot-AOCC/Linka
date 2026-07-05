@@ -54,6 +54,7 @@
     "setReminder": "Set reminder",
     "interactions": "Interactions",
     "suggestedTopics": "Suggested topics",
+    "longSilenceWarning": "No interactions in over 60 days — worth reaching out",
     "moreActions": "More actions",
     "edit": "Edit",
     "addContact": "Add contact",
