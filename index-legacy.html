@@ -1,0 +1,61 @@
+ˇˇ
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>NetworkAI - 您的個人人脈 AI 助手</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Noto+Sans:wght@400;500;700&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+</head>
+
+<body class="bg-background-light dark:bg-background-dark">
+    <div id="root">
+        <style>
+            .initial-loader {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                background-color: #f8fafc;
+            }
+
+            .spinner {
+                width: 40px;
+                height: 40px;
+                border: 3px solid #eff6ff;
+                border-top-color: #3b82f6;
+                border-radius: 50%;
+                animation: spin 0.8s linear infinite;
+            }
+
+            @keyframes spin {
+                to {
+                    transform: rotate(360deg);
+                }
+            }
+
+            /* Dark mode support */
+            @media (prefers-color-scheme: dark) {
+                .initial-loader {
+                    background-color: #020617;
+                }
+
+                .spinner {
+                    border-color: #1e293b;
+                    border-top-color: #3b82f6;
+                }
+            }
+        </style>
+        <div class="initial-loader">
+            <div class="spinner"></div>
+        </div>
+    </div>
+    <script type="module" src="/index.tsx"></script>
+</body>
+
+</html>
