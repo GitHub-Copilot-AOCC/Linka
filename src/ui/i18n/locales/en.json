@@ -126,6 +126,17 @@
     "empty": "No suggestions right now, try again later.",
     "genericError": "Couldn't get suggested topics. Please try again."
   },
+  "businessCard": {
+    "menuLabel": "Scan business card",
+    "title": "Business card scan",
+    "description": "Take a photo or upload a business card — AI will extract the name, role, company, phone, and email.",
+    "chooseImage": "Take photo / choose image",
+    "offlineError": "Business card scanning is unavailable while offline.",
+    "noNameError": "Couldn't detect a name in this image — try a different photo.",
+    "genericError": "Business card scan failed. Please try again.",
+    "confirmAdd": "Confirm & add contact",
+    "saving": "Adding…"
+  },
   "import": {
     "menuLabel": "Import contacts",
     "title": "Import contacts",

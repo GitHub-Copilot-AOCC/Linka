@@ -29,6 +29,7 @@ import MoreVertIcon from '@mui/icons-material/MoreVert';
 import SearchIcon from '@mui/icons-material/Search';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
+import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { useTranslation } from 'react-i18next';
 import { useContactsStore } from '@ui/store/contactsStore';
@@ -42,6 +43,7 @@ import { DeleteContactDialog } from '@ui/components/DeleteContactDialog';
 import { TagsManagerDialog } from '@ui/components/TagsManagerDialog';
 import { ImportContactsDialog } from '@ui/components/ImportContactsDialog';
 import { SuggestedTopicsDialog } from '@ui/components/SuggestedTopicsDialog';
+import { BusinessCardScanDialog } from '@ui/components/BusinessCardScanDialog';
 
 interface ContactsListScreenProps {
   uid: string;
@@ -67,6 +69,7 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
   const [activeTagId, setActiveTagId] = useState<string | null>(null);
   const [tagsManagerOpen, setTagsManagerOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [scanOpen, setScanOpen] = useState(false);
   const { tags, subscribe: subscribeTags } = useTagsStore();
 
   useEffect(() => {
@@ -98,9 +101,14 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
     <Box sx={{ p: 2, pb: 10 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
         <Typography variant="h5">{t('contacts.title')}</Typography>
-        <IconButton aria-label={t('import.menuLabel')} onClick={() => setImportOpen(true)}>
-          <UploadFileIcon fontSize="small" />
-        </IconButton>
+        <Box sx={{ display: 'flex' }}>
+          <IconButton aria-label={t('businessCard.menuLabel')} onClick={() => setScanOpen(true)}>
+            <CameraAltIcon fontSize="small" />
+          </IconButton>
+          <IconButton aria-label={t('import.menuLabel')} onClick={() => setImportOpen(true)}>
+            <UploadFileIcon fontSize="small" />
+          </IconButton>
+        </Box>
       </Box>
 
       {contacts.length > 0 && (
@@ -235,6 +243,8 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
       <TagsManagerDialog uid={uid} open={tagsManagerOpen} onClose={() => setTagsManagerOpen(false)} />
 
       <ImportContactsDialog uid={uid} open={importOpen} onClose={() => setImportOpen(false)} />
+
+      <BusinessCardScanDialog uid={uid} open={scanOpen} onClose={() => setScanOpen(false)} />
 
       {activeContactId && (
         <ContactInteractionsDialog

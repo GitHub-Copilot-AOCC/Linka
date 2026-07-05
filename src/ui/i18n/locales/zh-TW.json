@@ -126,6 +126,17 @@
     "empty": "目前沒有建議話題，稍後再試試看。",
     "genericError": "取得建議話題失敗，請稍後再試。"
   },
+  "businessCard": {
+    "menuLabel": "掃描名片",
+    "title": "名片辨識",
+    "description": "拍照或上傳一張名片，AI 會自動辨識姓名、職稱、公司、電話、Email。",
+    "chooseImage": "拍照/選擇圖片",
+    "offlineError": "離線時無法使用名片辨識。",
+    "noNameError": "無法從這張圖片辨識出姓名，請換一張再試。",
+    "genericError": "名片辨識失敗，請稍後再試。",
+    "confirmAdd": "確認新增聯絡人",
+    "saving": "新增中…"
+  },
   "import": {
     "menuLabel": "匯入聯絡人",
     "title": "匯入聯絡人",
