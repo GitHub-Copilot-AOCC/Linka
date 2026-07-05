@@ -1,0 +1,130 @@
+{
+  "common": {
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "close": "Close",
+    "add": "Add"
+  },
+  "firebaseNotConfigured": {
+    "title": "Firebase not configured",
+    "message": "Please set VITE_FIREBASE_* environment variables in .env and restart the dev server."
+  },
+  "auth": {
+    "loginTitle": "Log in to Linka",
+    "registerTitle": "Sign up for Linka",
+    "email": "Email",
+    "password": "Password",
+    "passwordHint": "Password (at least 8 characters)",
+    "loginButton": "Log in",
+    "registerButton": "Sign up",
+    "forgotPassword": "Forgot password?",
+    "enterEmailFirst": "Please enter your email first",
+    "resetSent": "Password reset email sent, please check your inbox",
+    "or": "or",
+    "googleLogin": "Sign in with Google",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "registerLink": "Sign up",
+    "loginLink": "Log in"
+  },
+  "nav": {
+    "appName": "Linka",
+    "home": "Home",
+    "contacts": "Contacts",
+    "settings": "Settings"
+  },
+  "dashboard": {
+    "title": "Home",
+    "noReminders": "Nothing to follow up on today."
+  },
+  "reminders": {
+    "title": "People to contact today",
+    "dateLabel": "Reminder date: {{date}}",
+    "markDone": "Mark done"
+  },
+  "contacts": {
+    "title": "Contacts",
+    "searchPlaceholder": "Search name/company/role",
+    "sortByName": "By name",
+    "sortByImportance": "By star",
+    "tagsManager": "Manage tags",
+    "empty": "No contacts yet — tap the button in the corner to add one.",
+    "noResults": "No contacts match \"{{keyword}}\".",
+    "setReminder": "Set reminder",
+    "interactions": "Interactions",
+    "moreActions": "More actions",
+    "edit": "Edit",
+    "addContact": "Add contact",
+    "name": "Name",
+    "company": "Company"
+  },
+  "editContact": {
+    "title": "Edit {{name}}",
+    "importance": "Importance",
+    "photos": "Photos (up to {{max}})",
+    "role": "Role",
+    "phone": "Phone",
+    "birthday": "Birthday",
+    "linkedin": "LinkedIn",
+    "notes": "Notes",
+    "tags": "Tags",
+    "maxPhotosError": "Maximum {{max}} photos — remove one first"
+  },
+  "deleteContact": {
+    "title": "Delete contact?",
+    "confirm": "Are you sure you want to delete \"{{name}}\"? This cannot be undone (interaction history is not deleted automatically)."
+  },
+  "setReminder": {
+    "title": "Next contact reminder for {{name}}",
+    "dateLabel": "Reminder date",
+    "clear": "Clear reminder"
+  },
+  "interactionsDialog": {
+    "title": "Interactions with {{name}}",
+    "type": "Type",
+    "typeMeeting": "Meeting",
+    "typeCall": "Call",
+    "typeEmail": "Email",
+    "description": "Description",
+    "date": "Date",
+    "addInteraction": "Add interaction",
+    "empty": "No interactions yet"
+  },
+  "tags": {
+    "title": "Manage tags",
+    "newTagLabel": "New tag name"
+  },
+  "operationLog": {
+    "title": "Activity log",
+    "empty": "No activity yet."
+  },
+  "settings": {
+    "title": "Settings",
+    "account": "Account",
+    "aiUsage": "AI usage (this month)",
+    "aiUsageCount": "{{used}} / {{limit}}",
+    "aiUsageUnavailable": "No usage data yet",
+    "syncStatus": "Sync status",
+    "operationLog": "Activity log",
+    "view": "View",
+    "logout": "Log out",
+    "language": "Language"
+  },
+  "syncStatus": {
+    "offline": "Offline",
+    "syncing": "Syncing",
+    "synced": "Synced",
+    "offlineTooltip": "No network connection — data will sync automatically once you're back online"
+  },
+  "import": {
+    "menuLabel": "Import contacts",
+    "title": "Import contacts",
+    "description": "Choose a vCard (.vcf) file to import multiple contacts.",
+    "chooseFile": "Choose file",
+    "noContactsFound": "No contacts found in this file",
+    "foundCount": "Found {{count}} contacts — select the ones to import:",
+    "duplicate": "Possible duplicate",
+    "importSelected": "Import {{count}}"
+  }
+}
