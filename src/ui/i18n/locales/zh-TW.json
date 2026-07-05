@@ -32,6 +32,7 @@
     "appName": "Linka",
     "home": "首頁",
     "contacts": "聯絡人",
+    "assistant": "AI 秘書問答",
     "settings": "設定"
   },
   "dashboard": {
@@ -147,5 +148,15 @@
     "foundCount": "找到 {{count}} 筆聯絡人，勾選要匯入的項目：",
     "duplicate": "可能重複",
     "importSelected": "匯入 {{count}} 筆"
+  },
+  "assistantChat": {
+    "title": "AI 秘書問答",
+    "emptyHint": "問我任何關於你人脈資料庫的問題，例如「我上次跟王小明見面聊了什麼」或「我認識哪些在 Google 工作的人」。",
+    "inputPlaceholder": "輸入你的問題…",
+    "send": "送出",
+    "thinking": "AI 秘書思考中…",
+    "assistantLabel": "AI 秘書",
+    "citationWithDate": "{{name}}（{{date}}）",
+    "genericError": "問答失敗，請稍後再試。"
   }
 }

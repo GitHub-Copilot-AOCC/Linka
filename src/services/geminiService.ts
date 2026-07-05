@@ -7,6 +7,8 @@ import type { TopicSuggestion } from '@domain/topicSuggestion';
 import { buildTopicSuggestionPrompt, parseTopicSuggestions } from '@domain/topicSuggestion';
 import type { BusinessCardFields } from '@domain/businessCard';
 import { BUSINESS_CARD_EXTRACTION_PROMPT, parseBusinessCardFields } from '@domain/businessCard';
+import type { ContactLite, ContactQueryPlan, AssistantAnswer } from '@domain/assistantChat';
+import { buildQueryPlanPrompt, parseQueryPlan, buildAnswerPrompt, parseAssistantAnswer } from '@domain/assistantChat';
 
 export class GeminiServiceError extends Error {}
 
@@ -49,4 +51,29 @@ export async function scanBusinessCard(base64Data: string, mimeType: string): Pr
     prompt: BUSINESS_CARD_EXTRACTION_PROMPT,
   });
   return parseBusinessCardFields(raw);
+}
+
+/**
+ * AI 秘書問答模式第一階段（見 spec.md §5.5a、§8.5「先查詢、後生成」）：
+ * 只送出問題 + 輕量聯絡人清單（姓名/公司/職稱），判斷哪些聯絡人可能相關，
+ * 不把完整聯絡人資料庫塞進 prompt。
+ */
+export async function planContactQuery(question: string, contacts: ContactLite[]): Promise<ContactQueryPlan> {
+  const { prompt, systemInstruction } = buildQueryPlanPrompt(question, contacts);
+  const raw = await callGeminiProxy('planContactQuery', { prompt, systemInstruction });
+  return parseQueryPlan(raw);
+}
+
+/**
+ * AI 秘書問答模式第二階段（見 spec.md §5.5a）：把問題 + 第一階段篩選後的聯絡人子集
+ * （含互動紀錄）交給 Gemini 生成最終回答，並要求註明引用的聯絡人/互動來源。
+ */
+export async function answerContactQuestion(
+  question: string,
+  contacts: Parameters<typeof buildAnswerPrompt>[1],
+  interactionsByContactId: Parameters<typeof buildAnswerPrompt>[2]
+): Promise<AssistantAnswer> {
+  const { prompt, systemInstruction } = buildAnswerPrompt(question, contacts, interactionsByContactId);
+  const raw = await callGeminiProxy('answerContactQuestion', { prompt, systemInstruction });
+  return parseAssistantAnswer(raw);
 }

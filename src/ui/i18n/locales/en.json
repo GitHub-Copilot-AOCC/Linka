@@ -32,6 +32,7 @@
     "appName": "Linka",
     "home": "Home",
     "contacts": "Contacts",
+    "assistant": "AI Assistant",
     "settings": "Settings"
   },
   "dashboard": {
@@ -147,5 +148,15 @@
     "foundCount": "Found {{count}} contacts — select the ones to import:",
     "duplicate": "Possible duplicate",
     "importSelected": "Import {{count}}"
+  },
+  "assistantChat": {
+    "title": "AI Assistant",
+    "emptyHint": "Ask me anything about your contacts, e.g. \"What did I discuss with John last time?\" or \"Who do I know that works at Google?\"",
+    "inputPlaceholder": "Type your question…",
+    "send": "Send",
+    "thinking": "The assistant is thinking…",
+    "assistantLabel": "AI Assistant",
+    "citationWithDate": "{{name}} ({{date}})",
+    "genericError": "Something went wrong. Please try again."
   }
 }

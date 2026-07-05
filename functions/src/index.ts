@@ -133,6 +133,47 @@ export const geminiProxy = onRequest({
                 break;
             }
 
+            case "planContactQuery": {
+                // 見 spec.md §5.5a、§8.5：問答模式第一階段「查詢規劃」。
+                // 輸入為使用者問題 + 輕量聯絡人清單（僅姓名/公司/職稱，不含完整資料），
+                // 輸出判斷出的相關聯絡人姓名與關鍵字，供前端據此對 Firestore 做範圍查詢，
+                // 避免把整個聯絡人資料庫塞進單次 prompt。
+                const { prompt, systemInstruction } = payload;
+                console.log("Planning contact query...");
+                const model = genAI.getGenerativeModel({
+                    model: GEMINI_MODEL,
+                    systemInstruction: systemInstruction,
+                    generationConfig: {
+                        responseMimeType: "application/json"
+                    }
+                });
+                const apiResult = await model.generateContent({
+                    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+                });
+                result = cleanAndParseJson(apiResult.response.text());
+                break;
+            }
+
+            case "answerContactQuestion": {
+                // 見 spec.md §5.5a：問答模式第二階段「生成回答」。輸入為使用者問題 +
+                // 第一階段查詢規劃後從 Firestore 撈出的相關聯絡人/互動子集（而非整個資料庫），
+                // 要求回答需註明資訊來源於哪位聯絡人／哪筆互動紀錄。
+                const { prompt, systemInstruction } = payload;
+                console.log("Answering contact question...");
+                const model = genAI.getGenerativeModel({
+                    model: GEMINI_MODEL,
+                    systemInstruction: systemInstruction,
+                    generationConfig: {
+                        responseMimeType: "application/json"
+                    }
+                });
+                const apiResult = await model.generateContent({
+                    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+                });
+                result = cleanAndParseJson(apiResult.response.text());
+                break;
+            }
+
             default:
                 response.status(400).json({ error: "Unknown action" });
                 return;

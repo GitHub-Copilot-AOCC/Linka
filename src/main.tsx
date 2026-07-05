@@ -7,6 +7,7 @@ import '@ui/i18n';
 import { theme } from '@ui/theme/theme';
 import { DashboardScreen } from '@ui/screens/DashboardScreen';
 import { ContactsListScreen } from '@ui/screens/ContactsListScreen';
+import { AssistantChatScreen } from '@ui/screens/AssistantChatScreen';
 import { SettingsScreen } from '@ui/screens/SettingsScreen';
 import { LoginScreen } from '@ui/screens/LoginScreen';
 import { RegisterScreen } from '@ui/screens/RegisterScreen';
@@ -62,6 +63,16 @@ function App() {
             <ProtectedRoute>
               <NavShell>
                 <ContactsRoute />
+              </NavShell>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/assistant"
+          element={
+            <ProtectedRoute>
+              <NavShell>
+                <AssistantChatScreen />
               </NavShell>
             </ProtectedRoute>
           }
