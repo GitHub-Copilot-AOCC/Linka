@@ -21,6 +21,21 @@
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "@domain/*": [
+        "./src/domain/*"
+      ],
+      "@data/*": [
+        "./src/data/*"
+      ],
+      "@services/*": [
+        "./src/services/*"
+      ],
+      "@platform/*": [
+        "./src/platform/*"
+      ],
+      "@ui/*": [
+        "./src/ui/*"
       ]
     },
     "allowImportingTsExtensions": true,

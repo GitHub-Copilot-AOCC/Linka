@@ -8,20 +8,25 @@
 
 ## 1. 分層架構是硬規則，不是建議（對應 spec.md §8.3）
 
+新架構統一放在 `src/` 下，與 repo 根目錄的舊版檔案（`App.tsx`、`components/`、`screens/`、`services/` 等）完全分開，避免命名衝突（例如舊版根目錄已有 `services/`）：
+
 ```
-/domain          — 純 TypeScript，不依賴任何平台 API：型別定義、驗證邏輯、業務規則
-/data            — Firebase 存取層（Firestore/Auth/Storage 的 repository 封裝）
-/services        — AI 服務呼叫、支付服務呼叫等外部整合
-/platform        — 平台介面與實作（圖片處理、檔案選取、通知等）
-/ui              — React 元件、畫面、路由（僅此層可以是 Web-only）
+src/domain          — 純 TypeScript，不依賴任何平台 API：型別定義、驗證邏輯、業務規則
+src/data            — Firebase 存取層（Firestore/Auth/Storage 的 repository 封裝）
+src/services        — AI 服務呼叫、支付服務呼叫等外部整合
+src/platform        — 平台介面與實作（圖片處理、檔案選取、通知等）
+src/ui              — React 元件、畫面、路由（僅此層可以是 Web-only）
 ```
 
+每個目錄底下都有一份 README.md 說明該層職責與規則，開發對應功能前先讀過。專案已設定對應的 import alias：`@domain/*`、`@data/*`、`@services/*`、`@platform/*`、`@ui/*`（見 `tsconfig.json`、`vite.config.ts`），新程式碼一律用這些 alias import，不要用相對路徑跨層引用。
+
 **強制規則：**
-- `/domain`、`/data`、`/services` 內的檔案**禁止** import 任何瀏覽器/DOM API：`window`、`document`、`FileReader`、`canvas`、`localStorage` 等。這些一律透過 `/platform` 的介面包裝，Web 用瀏覽器實作、未來 RN 用原生實作替換。
-- 畫面元件（`/ui`）**禁止**直接呼叫 Firestore SDK（`getDoc`、`onSnapshot`、`addDoc` 等）。所有資料存取一律經過 `/data` 的 repository 函式。
-- 畫面元件**禁止**內嵌驗證邏輯或業務規則（例如「免費版是否超過額度」的判斷）。這類邏輯屬於 `/domain`，元件只呼叫 domain 函式取得結果並呈現。
+- `src/domain`、`src/data`、`src/services` 內的檔案**禁止** import 任何瀏覽器/DOM API：`window`、`document`、`FileReader`、`canvas`、`localStorage` 等。這些一律透過 `src/platform` 的介面包裝，Web 用瀏覽器實作、未來 RN 用原生實作替換。
+- 畫面元件（`src/ui`）**禁止**直接呼叫 Firestore SDK（`getDoc`、`onSnapshot`、`addDoc` 等）。所有資料存取一律經過 `src/data` 的 repository 函式。
+- 畫面元件**禁止**內嵌驗證邏輯或業務規則（例如「免費版是否超過額度」的判斷）。這類邏輯屬於 `src/domain`，元件只呼叫 domain 函式取得結果並呈現。
 - 新增檔案前先問自己：這段程式碼如果搬到 React Native 專案，能不能原封不動 import？如果答案是否，這段程式碼放錯層了。
 - 若專案已設定 ESLint，新增/修改規則時應加入 `no-restricted-imports` 之類的規則，把上述限制變成自動化檢查，不要只靠人工記憶或 code review 抓。
+- 舊版根目錄的 `App.tsx`、`components/`、`screens/`、`services/` 等檔案暫時保留（供參考/尚未移除），但**不是**新架構的基礎，新程式碼不應 import 這些舊檔案。
 
 **代辦事項**：v1 開發初期應優先建立這五個目錄的骨架與對應的 ESLint 規則，作為所有後續功能開發的基礎（對應之前討論的「先做護欄再做功能」原則）。
 
