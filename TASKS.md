@@ -1,0 +1,93 @@
+# Linka 開發任務清單
+
+> 對照 [spec.md](spec.md)。狀態以本檔案最後更新時間為準，開發過程中請隨手更新，避免重演舊版「文件落後程式碼」的問題（見 spec.md 附錄）。
+> 最後更新：2026-07-05
+
+---
+
+## ✅ 已完成
+
+### 基礎設施
+- [x] 分層架構骨架（`src/domain` `src/data` `src/services` `src/platform` `src/ui`）
+- [x] Firebase 專案設定：Firestore + Security Rules、Storage + Security Rules、Auth（Email/密碼已啟用）、Hosting、Cloud Functions IAM 權限
+- [x] CI/CD（GitHub Actions 部署到 Firebase Hosting + Functions）
+- [x] Gemini 模型定案（`gemini-3.1-flash-lite`，見 spec.md §8.5）
+
+### 功能
+| 章節 | 功能 | 備註 |
+|---|---|---|
+| §5.1 | 帳號登入/註冊/登出、忘記密碼 | Email/密碼完整；**Google OAuth 程式碼寫好但被卡在主控台手動啟用**（需要 OAuth client_id，API 無法代辦） |
+| §5.2 | 聯絡人 CRUD 全套 | 新增/編輯/刪除、搜尋、依姓名/星級排序、標籤與社交圈篩選 |
+| §5.3 | 互動紀錄（手動） | 會議/通話/Email 記錄，綁定聯絡人 |
+| §5.4 | 提醒（手動） | 設定下次聯絡日期 + 首頁待辦面板 |
+| §5.10 | 操作歷史紀錄 | append-only，記錄 CRUD + 互動操作 |
+| §5.11 | 離線/同步狀態指示 | Firestore offline persistence 本來就有，這次補上 UI 三態顯示 |
+
+---
+
+## ⏳ 待完成
+
+| 章節 | 功能 | 依賴/備註 |
+|---|---|---|
+| §5.1 | Google OAuth 啟用 | 卡在人工手動點 Console，不是程式碼工作 |
+| §5.2 | 聯絡人照片上傳（Storage） | 目前完全沒做 |
+| §5.3a | AI 語音/文字快速記錄 | 需要 Cloud Function |
+| §5.5 項目1 | 名片 OCR | 需要 Cloud Function + Gemini |
+| §5.5a | AI 問答秘書（聊天） | 需要 Cloud Function，「先查詢後生成」二階段設計 |
+| §5.5 項目4 | AI 建議話題 | 需要 Cloud Function |
+| §5.6 | AI 主動提醒（生日/久未聯絡） | 需要 Cloud Scheduler + `AgentSuggestion` |
+| §5.7 | 文件通訊錄批次匯入 | 需要 Cloud Function 解析 PDF/Word/Excel |
+| §5.8 | 網路身分研究摘要 + 照片搜尋 | 需要 Cloud Function + Google Search 工具 |
+| §5.9 | Google 聯絡人/vCard 匯入 | 前端工作，需要 OAuth scope 或檔案解析 |
+| §5.12 | 多語言（i18next） | 目前全部中文寫死 |
+| §11.2 | Material 導覽（Bottom Nav/Rail） | 目前只有簡易 AppBar，沒有正式導覽架構 |
+| §8.4 | Stripe 訂閱整合 | 完全沒開始 |
+| §3 | 免費版額度實際限制（UsageQuota 執行） | 資料模型有欄位，但沒有真正計費配額的邏輯 |
+| — | Cloud Functions 本體 | `functions/` 目錄目前是舊版程式碼，`geminiProxy` 需要全面重寫擴充 |
+
+---
+
+## 分工建議
+
+**核心考量**：`functions/`（Cloud Functions 後端）跟 `src/`（前端）是完全分開的兩個資料夾，兩人同時改不會互相衝突，是最適合平行開發的切分點。
+
+### 建議：同事負責 Cloud Functions 後端
+理由：目前**所有 AI 功能都卡在沒有 Cloud Function**，是最大瓶頸，且完全獨立於前端工作。
+
+建議順序：
+1. 重寫 `geminiProxy`，改用 `gemini-3.1-flash-lite`，先支援名片 OCR（§5.5 項目1，最簡單，單張圖辨識）
+2. 擴充支援 §5.3a 語音/文字快速記錄（音訊直接送 Gemini，見 spec.md §5.3a 定案的技術路徑）
+3. Stripe Webhook Cloud Function 骨架（§8.4），先處理訂閱事件更新 `UserProfile.plan`
+4. 每日排程 Cloud Function 骨架（§5.6 主動提醒），先做純規則比對（生日、無互動天數），不呼叫 AI 的部分
+
+這四項幾乎不需要碰 `src/` 任何檔案，可以完全並行。
+
+### 建議：前端持續開發
+- §11.2 Material 導覽骨架（Bottom Nav/Rail），之後每個新畫面都需要的基礎
+- §5.2 照片上傳（Storage）
+- §5.12 多語言 i18next 設定
+
+### 交接風險提醒
+這批功能是**疊在一起的分支**（一個接一個從前一個開出來，不是各自獨立於 `main`）。開始 Cloud Functions 工作前，建議：
+- 先把目前所有功能分支合併進 `main`（依序或直接合併最新的 `feature/operation-log`，見下方分支狀態），讓兩人都從乾淨的 `main` 起步；或
+- 若時間緊迫必須立刻並行，同事可以先從 `feature/operation-log` 開分支（拿到最新的 domain 型別定義如 `Interaction`、`Tag`、`LogEntry`），但要留意之後合併回 `main` 時的分支順序。
+
+### 目前分支狀態（2026-07-05）
+以下分支依序疊加（每個都包含前一個的所有變更），`feature/operation-log` 是目前最新、包含全部 9 個功能的分支：
+
+```
+main
+ └─ chore/gemini-3.1-flash-lite
+     └─ feature/auth-login
+         └─ feature/interactions-crud
+             └─ feature/manual-reminders
+                 └─ feature/contact-edit-delete
+                     └─ feature/contacts-search-sort
+                         └─ feature/tags
+                             └─ feature/offline-status
+                                 └─ feature/operation-log   ← 最新
+```
+
+合併方式二選一：
+1. **簡單**：直接把 `feature/operation-log` 合併進 `main`（一次拿到全部 9 個功能）
+2. **逐步**：依上圖順序一個個合併，方便逐個 review
