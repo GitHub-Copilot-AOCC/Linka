@@ -9,6 +9,7 @@ import {
   subscribeAuthState,
 } from '@data/authRepository';
 import { ensureUserProfile } from '@data/userProfileRepository';
+import { ensureDefaultTags } from '@data/tagsRepository';
 import { validateAuthForm } from '@domain/user';
 import { detectBrowserLocale } from '@platform/locale';
 
@@ -39,6 +40,7 @@ export const useAuthStore = create<AuthState>((set) => ({
             set({ error: (err as Error).message });
           }
         );
+        ensureDefaultTags(user.uid).catch((err) => console.error('ensureDefaultTags failed:', err));
       }
     });
   },

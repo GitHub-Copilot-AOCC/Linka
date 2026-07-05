@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -10,8 +10,10 @@ import {
   Rating,
   Box,
   Typography,
+  Chip,
 } from '@mui/material';
 import { useContactsStore } from '@ui/store/contactsStore';
+import { useTagsStore } from '@ui/store/tagsStore';
 import { validateContact } from '@domain/contact';
 import type { Contact } from '@domain/contact';
 
@@ -36,7 +38,15 @@ export function EditContactDialog({ uid, contact, open, onClose }: EditContactDi
     notes: contact.notes ?? '',
   });
   const [importance, setImportance] = useState<Contact['importance']>(contact.importance);
+  const [tagIds, setTagIds] = useState<string[]>(contact.tags ?? []);
   const [error, setError] = useState<string | null>(null);
+  const { tags, subscribe } = useTagsStore();
+
+  useEffect(() => subscribe(uid), [uid, subscribe]);
+
+  function toggleTag(tagId: string) {
+    setTagIds((ids) => (ids.includes(tagId) ? ids.filter((id) => id !== tagId) : [...ids, tagId]));
+  }
 
   function field(key: keyof typeof form) {
     return {
@@ -56,6 +66,7 @@ export function EditContactDialog({ uid, contact, open, onClose }: EditContactDi
       linkedin: form.linkedin || undefined,
       notes: form.notes || undefined,
       importance,
+      tags: tagIds.length > 0 ? tagIds : undefined,
     };
 
     const result = validateContact({ ...patch, name: patch.name });
@@ -98,6 +109,21 @@ export function EditContactDialog({ uid, contact, open, onClose }: EditContactDi
         />
         <TextField label="LinkedIn" fullWidth margin="dense" {...field('linkedin')} />
         <TextField label="備註" fullWidth margin="dense" multiline rows={2} {...field('notes')} />
+
+        <Typography variant="body2" sx={{ mt: 2, mb: 1 }}>
+          標籤
+        </Typography>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+          {tags.map((tag) => (
+            <Chip
+              key={tag.id}
+              label={tag.name}
+              onClick={() => toggleTag(tag.id)}
+              color={tagIds.includes(tag.id) ? 'primary' : 'default'}
+              variant={tagIds.includes(tag.id) ? 'filled' : 'outlined'}
+            />
+          ))}
+        </Box>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>取消</Button>

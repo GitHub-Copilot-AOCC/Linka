@@ -105,6 +105,12 @@ export function filterContactsByKeyword(contacts: Contact[], keyword: string): C
   );
 }
 
+/** 依社交圈標籤篩選（見 spec.md §5.2）。tagId 為 null/undefined 時不篩選。 */
+export function filterContactsByTag(contacts: Contact[], tagId: string | null): Contact[] {
+  if (!tagId) return contacts;
+  return contacts.filter((c) => c.tags?.includes(tagId));
+}
+
 export type ContactSortBy = 'name' | 'importance';
 
 /** 列表排序：依姓名字母（預設）或依星級（高到低）。見 spec.md §5.2。 */

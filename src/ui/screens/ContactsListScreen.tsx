@@ -19,6 +19,7 @@ import {
   MenuItem,
   ToggleButton,
   ToggleButtonGroup,
+  Chip,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import StarIcon from '@mui/icons-material/Star';
@@ -26,13 +27,16 @@ import HistoryIcon from '@mui/icons-material/History';
 import AlarmIcon from '@mui/icons-material/Alarm';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import SearchIcon from '@mui/icons-material/Search';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import { useContactsStore } from '@ui/store/contactsStore';
+import { useTagsStore } from '@ui/store/tagsStore';
 import type { NewContactInput, ContactSortBy } from '@domain/contact';
-import { filterContactsByKeyword, sortContacts } from '@domain/contact';
+import { filterContactsByKeyword, filterContactsByTag, sortContacts } from '@domain/contact';
 import { ContactInteractionsDialog } from '@ui/components/ContactInteractionsDialog';
 import { SetReminderDialog } from '@ui/components/SetReminderDialog';
 import { EditContactDialog } from '@ui/components/EditContactDialog';
 import { DeleteContactDialog } from '@ui/components/DeleteContactDialog';
+import { TagsManagerDialog } from '@ui/components/TagsManagerDialog';
 
 interface ContactsListScreenProps {
   uid: string;
@@ -53,13 +57,21 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
   const [menuContactId, setMenuContactId] = useState<string | null>(null);
   const [keyword, setKeyword] = useState('');
   const [sortBy, setSortBy] = useState<ContactSortBy>('name');
+  const [activeTagId, setActiveTagId] = useState<string | null>(null);
+  const [tagsManagerOpen, setTagsManagerOpen] = useState(false);
+  const { tags, subscribe: subscribeTags } = useTagsStore();
 
   useEffect(() => {
     const unsubscribe = subscribe(uid);
     return unsubscribe;
   }, [uid, subscribe]);
 
-  const visibleContacts = sortContacts(filterContactsByKeyword(contacts, keyword), sortBy);
+  useEffect(() => subscribeTags(uid), [uid, subscribeTags]);
+
+  const visibleContacts = sortContacts(
+    filterContactsByTag(filterContactsByKeyword(contacts, keyword), activeTagId),
+    sortBy
+  );
 
   async function handleSubmit() {
     const input: NewContactInput = { name, company: company || undefined };
@@ -99,6 +111,24 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
             <ToggleButton value="name">依姓名</ToggleButton>
             <ToggleButton value="importance">依星級</ToggleButton>
           </ToggleButtonGroup>
+          <IconButton aria-label="標籤管理" onClick={() => setTagsManagerOpen(true)}>
+            <LocalOfferIcon fontSize="small" />
+          </IconButton>
+        </Box>
+      )}
+
+      {contacts.length > 0 && tags.length > 0 && (
+        <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
+          {tags.map((tag) => (
+            <Chip
+              key={tag.id}
+              label={tag.name}
+              size="small"
+              onClick={() => setActiveTagId(activeTagId === tag.id ? null : tag.id)}
+              color={activeTagId === tag.id ? 'primary' : 'default'}
+              variant={activeTagId === tag.id ? 'filled' : 'outlined'}
+            />
+          ))}
         </Box>
       )}
 
@@ -186,6 +216,8 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
           onClose={() => setDeleteContactId(null)}
         />
       )}
+
+      <TagsManagerDialog uid={uid} open={tagsManagerOpen} onClose={() => setTagsManagerOpen(false)} />
 
       {activeContactId && (
         <ContactInteractionsDialog
