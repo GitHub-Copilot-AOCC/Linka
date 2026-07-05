@@ -53,6 +53,7 @@
     "noResults": "找不到符合「{{keyword}}」的聯絡人。",
     "setReminder": "設定提醒",
     "interactions": "互動紀錄",
+    "suggestedTopics": "建議話題",
     "moreActions": "更多操作",
     "edit": "編輯",
     "addContact": "新增聯絡人",
@@ -116,6 +117,14 @@
     "syncing": "同步中",
     "synced": "已同步",
     "offlineTooltip": "無網路連線，資料會在恢復連線後自動同步"
+  },
+  "suggestedTopics": {
+    "title": "{{name}} 的建議話題",
+    "description": "AI 會根據這位聯絡人的資料與最近互動紀錄，建議幾個適合聊的話題。",
+    "generate": "取得建議",
+    "regenerate": "重新產生",
+    "empty": "目前沒有建議話題，稍後再試試看。",
+    "genericError": "取得建議話題失敗，請稍後再試。"
   },
   "import": {
     "menuLabel": "匯入聯絡人",
