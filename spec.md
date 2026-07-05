@@ -386,11 +386,13 @@ users/{uid}/contacts/{contactId}/photos/{photoId}.jpg
 - 三種模式（快速記錄／問答／主動提醒）共用同一組 AI 代理 Cloud Function 基礎設施（`geminiProxy` 擴充），但邏輯上分開的 handler/action
 
 ### 8.6 CI/CD 部署流程（v1 新增，修正舊版缺口）
-- 舊版 CI/CD 僅涵蓋前端靜態檔部署，Cloud Functions 需手動部署，曾是延遲上線的原因之一（見附錄）
+- 舊版 CI/CD 僅涵蓋前端靜態檔部署（部署到 GitHub Pages），Cloud Functions 需手動部署，曾是延遲上線的原因之一（見附錄）
+- **前端 Hosting 定案：Firebase Hosting**，不是 GitHub Pages、不是 Vercel。理由：前端與後端（Firestore/Auth/Storage/Functions）同屬一個 Firebase 專案，用同一套 `firebase deploy` 管理，避免多平台部署設定分散、環境變數/網域設定不一致的問題
 - **v1 定案**：GitHub Actions pipeline 需同時涵蓋前端與後端部署，包含：
-  1. 前端建置與部署（延續舊版流程）
-  2. **`firebase deploy --only functions`** 自動部署 Cloud Functions（新增，含 `geminiProxy`、Stripe webhook、每日排程函式等）
+  1. 前端建置後 **`firebase deploy --only hosting`** 部署到 Firebase Hosting（取代舊版 GitHub Pages 流程）
+  2. **`firebase deploy --only functions`** 自動部署 Cloud Functions（含 `geminiProxy`、Stripe webhook、每日排程函式等）
   3. 部署前檢查 Secret Manager 所需的環境變數/金鑰是否已設定，缺漏時 pipeline 應失敗並明確報錯，而非部署後才發現執行時錯誤
+  4. 部署身分驗證使用 Firebase 服務帳戶（Service Account），以 GitHub Actions Secret 儲存，不使用已棄用的 `firebase login:ci` token
 - 目標：避免重演舊版「Firebase Spark 方案不支援 Cloud Functions、Secret Manager API 未啟用」等部署卡關問題
 
 ---

@@ -56,8 +56,10 @@ src/ui              — React 元件、畫面、路由（僅此層可以是 Web-
 
 ## 4. CI/CD（對應 spec.md §8.6）
 
-- Pipeline 需同時涵蓋前端建置部署與 `firebase deploy --only functions`，不可只部署前端後就視為完成（此為舊版曾卡關的已知問題，見附錄）。
+- 前端部署目標**定案為 Firebase Hosting，不是 Vercel、不是 GitHub Pages**：前後端同屬一個 Firebase 專案，統一用 `firebase deploy` 管理。
+- Pipeline 需同時涵蓋 `firebase deploy --only hosting` 與 `firebase deploy --only functions`，不可只部署前端後就視為完成（此為舊版曾卡關的已知問題，見附錄）。
 - 部署前需檢查 Secret Manager 所需環境變數是否齊備，缺漏應讓 pipeline 失敗並明確報錯，而非部署後才在執行時發現。
+- GitHub Actions 部署身分驗證所需的 Firebase 服務帳戶金鑰、環境變數等 secrets，需由人工在 GitHub repo 設定（Settings → Secrets），AI agent 不可代為建立或讀取這類 secret 的值。
 
 ---
 
@@ -89,6 +91,7 @@ src/ui              — React 元件、畫面、路由（僅此層可以是 Web-
 | UI 元件庫 | MUI（Material UI，Material Design 3） |
 | 多語言 | i18next / react-i18next |
 | 後端 | Firebase（Firestore / Auth / Storage / Cloud Functions） |
+| 前端部署 | Firebase Hosting（非 Vercel、非 GitHub Pages） |
 | AI | Gemini，透過 Cloud Function 代理（`geminiProxy`），前端不可直接持有 API Key |
 | 支付 | Stripe（Web 訂閱） |
 | 未來手機版元件庫 | `react-native-paper`（與 Web 共用同一份 Material 3 token） |
