@@ -5,6 +5,8 @@ import type { Contact } from '@domain/contact';
 import type { Interaction } from '@domain/interaction';
 import type { TopicSuggestion } from '@domain/topicSuggestion';
 import { buildTopicSuggestionPrompt, parseTopicSuggestions } from '@domain/topicSuggestion';
+import type { BusinessCardFields } from '@domain/businessCard';
+import { BUSINESS_CARD_EXTRACTION_PROMPT, parseBusinessCardFields } from '@domain/businessCard';
 
 export class GeminiServiceError extends Error {}
 
@@ -37,4 +39,14 @@ export async function suggestTopics(contact: Contact, interactions: Interaction[
   const { prompt, systemInstruction } = buildTopicSuggestionPrompt(contact, interactions);
   const raw = await callGeminiProxy('getSuggestedTopics', { prompt, systemInstruction });
   return parseTopicSuggestions(raw);
+}
+
+/** 名片 OCR（見 spec.md §5.5 項目1）：回傳辨識出的欄位供使用者確認，不寫入任何資料。 */
+export async function scanBusinessCard(base64Data: string, mimeType: string): Promise<BusinessCardFields | null> {
+  const raw = await callGeminiProxy('extractContactFromCard', {
+    base64Data,
+    mimeType,
+    prompt: BUSINESS_CARD_EXTRACTION_PROMPT,
+  });
+  return parseBusinessCardFields(raw);
 }

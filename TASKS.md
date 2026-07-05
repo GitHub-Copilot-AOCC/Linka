@@ -29,6 +29,7 @@
 | §5.9 | vCard (.vcf) 匯入 | 解析→預覽勾選（重複資料預警）→批次寫入；解析邏輯已直接驗證，**檔案選取點擊互動同樣未手動測過**；Google 聯絡人 API 匯入未做（需額外 OAuth scope） |
 | §3 | AI 用量顯示（唯讀） | Settings 顯示「X / 1000 次」+ 進度條；**真正的配額執行/增量是後端工作**（Security Rules 擋掉前端寫入），前端只做顯示，已用測試文件驗證兩種狀態 |
 | §5.5 項目4 | AI 建議話題 | `functions/src/index.ts` 既有 `getSuggestedTopics` action 不需改動（本來就是通用 prompt passthrough）；新增 `src/domain/topicSuggestion.ts`（prompt 組裝/回應解析）、`src/services/geminiService.ts`（呼叫 `geminiProxy`，新增 `VITE_GEMINI_PROXY_URL` 環境變數）、`src/ui/components/SuggestedTopicsDialog.tsx`，接在聯絡人列表的新圖示按鈕；**此環境沒有 Node/npm，`npm run build`／dev server 手動驗證未做**，合併前務必在有 Node 的環境跑過一次 |
+| §5.5 項目1 | 名片 OCR | `functions/src/index.ts` 既有 `extractContactFromCard` action 早就是 `gemini-3.1-flash-lite`，本來就不需要 Codex 那個任務（模型是全域共用常數，之前的 model swap 已經順帶做完了）；新增 `src/domain/businessCard.ts`（prompt/解析）、`geminiService.ts` 補 `scanBusinessCard()`、`src/ui/components/BusinessCardScanDialog.tsx`（拍照/選圖 → AI 辨識 → 預覽確認 → 建立聯絡人，`source: 'ocr'`），接在聯絡人列表 header 新的相機圖示。已在真實瀏覽器端到端測過：用 Canvas 產生一張假名片圖片，AI 100% 正確辨識姓名/職稱/公司/電話/Email，確認後正確建立聯絡人 |
 
 ---
 
@@ -37,7 +38,6 @@
 | 章節 | 功能 | 依賴/備註 |
 |---|---|---|
 | §5.3a | AI 語音/文字快速記錄 | 需要 Cloud Function（**已指派 Codex**，見下方） |
-| §5.5 項目1 | 名片 OCR | 需要 Cloud Function + Gemini（**已指派 Codex**：先把 `geminiProxy` 既有 `extractContactFromCard` action 換成 `gemini-3.1-flash-lite`） |
 | §5.5a | AI 問答秘書（聊天） | 需要 Cloud Function，「先查詢後生成」二階段設計 |
 | §5.6 | AI 主動提醒（生日/久未聯絡） | 需要 Cloud Scheduler + `AgentSuggestion`（**已指派 Codex**，見 `codex/ai-quick-log-and-proactive-reminders`） |
 | §5.7 | 文件通訊錄批次匯入 | 需要 Cloud Function 解析 PDF/Word/Excel |
