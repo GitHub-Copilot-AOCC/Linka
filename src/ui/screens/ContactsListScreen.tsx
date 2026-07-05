@@ -29,6 +29,7 @@ import MoreVertIcon from '@mui/icons-material/MoreVert';
 import SearchIcon from '@mui/icons-material/Search';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { useTranslation } from 'react-i18next';
 import { useContactsStore } from '@ui/store/contactsStore';
 import { useTagsStore } from '@ui/store/tagsStore';
@@ -40,6 +41,7 @@ import { EditContactDialog } from '@ui/components/EditContactDialog';
 import { DeleteContactDialog } from '@ui/components/DeleteContactDialog';
 import { TagsManagerDialog } from '@ui/components/TagsManagerDialog';
 import { ImportContactsDialog } from '@ui/components/ImportContactsDialog';
+import { SuggestedTopicsDialog } from '@ui/components/SuggestedTopicsDialog';
 
 interface ContactsListScreenProps {
   uid: string;
@@ -54,6 +56,7 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
   const [company, setCompany] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
   const [activeContactId, setActiveContactId] = useState<string | null>(null);
+  const [topicsContactId, setTopicsContactId] = useState<string | null>(null);
   const [reminderContactId, setReminderContactId] = useState<string | null>(null);
   const [editContactId, setEditContactId] = useState<string | null>(null);
   const [deleteContactId, setDeleteContactId] = useState<string | null>(null);
@@ -172,6 +175,12 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
                 <HistoryIcon fontSize="small" />
               </IconButton>
               <IconButton
+                aria-label={t('contacts.suggestedTopics')}
+                onClick={() => setTopicsContactId(contact.id)}
+              >
+                <AutoAwesomeIcon fontSize="small" />
+              </IconButton>
+              <IconButton
                 aria-label={t('contacts.moreActions')}
                 onClick={(e) => {
                   setMenuAnchor(e.currentTarget);
@@ -243,6 +252,15 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
           contact={contacts.find((c) => c.id === reminderContactId)!}
           open
           onClose={() => setReminderContactId(null)}
+        />
+      )}
+
+      {topicsContactId && (
+        <SuggestedTopicsDialog
+          uid={uid}
+          contact={contacts.find((c) => c.id === topicsContactId)!}
+          open
+          onClose={() => setTopicsContactId(null)}
         />
       )}
 

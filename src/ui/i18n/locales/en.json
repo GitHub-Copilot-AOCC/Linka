@@ -53,6 +53,7 @@
     "noResults": "No contacts match \"{{keyword}}\".",
     "setReminder": "Set reminder",
     "interactions": "Interactions",
+    "suggestedTopics": "Suggested topics",
     "moreActions": "More actions",
     "edit": "Edit",
     "addContact": "Add contact",
@@ -116,6 +117,14 @@
     "syncing": "Syncing",
     "synced": "Synced",
     "offlineTooltip": "No network connection — data will sync automatically once you're back online"
+  },
+  "suggestedTopics": {
+    "title": "Suggested topics for {{name}}",
+    "description": "AI will suggest a few topics worth bringing up, based on this contact's profile and recent interactions.",
+    "generate": "Get suggestions",
+    "regenerate": "Regenerate",
+    "empty": "No suggestions right now, try again later.",
+    "genericError": "Couldn't get suggested topics. Please try again."
   },
   "import": {
     "menuLabel": "Import contacts",
