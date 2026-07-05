@@ -28,7 +28,9 @@
 | §5.12 | 多語言（i18next） | 繁中/英文，瀏覽器自動偵測 + 設定手動切換，已驗證整站切換正確；使用者資料（姓名/公司/標籤）刻意不翻譯 |
 | §5.9 | vCard (.vcf) 匯入 | 解析→預覽勾選（重複資料預警）→批次寫入；解析邏輯已直接驗證，**檔案選取點擊互動同樣未手動測過**；Google 聯絡人 API 匯入未做（需額外 OAuth scope） |
 | §3 | AI 用量顯示（唯讀） | Settings 顯示「X / 1000 次」+ 進度條；**真正的配額執行/增量是後端工作**（Security Rules 擋掉前端寫入），前端只做顯示，已用測試文件驗證兩種狀態 |
-| §5.5 項目4 | AI 建議話題 | `functions/src/index.ts` 既有 `getSuggestedTopics` action 不需改動（本來就是通用 prompt passthrough）；新增 `src/domain/topicSuggestion.ts`（prompt 組裝/回應解析）、`src/services/geminiService.ts`（呼叫 `geminiProxy`，新增 `VITE_GEMINI_PROXY_URL` 環境變數）、`src/ui/components/SuggestedTopicsDialog.tsx`，接在聯絡人列表的新圖示按鈕；**此環境沒有 Node/npm，`npm run build`／dev server 手動驗證未做**，合併前務必在有 Node 的環境跑過一次 |
+| §5.5 項目4 | AI 建議話題 | `functions/src/index.ts` 既有 `getSuggestedTopics` action 不需改動（本來就是通用 prompt passthrough）；新增 `src/domain/topicSuggestion.ts`（prompt 組裝/回應解析）、`src/services/geminiService.ts`（呼叫 `geminiProxy`，新增 `VITE_GEMINI_PROXY_URL` 環境變數）、`src/ui/components/SuggestedTopicsDialog.tsx`，接在聯絡人列表的新圖示按鈕；已在真實瀏覽器測過完整流程（含正式環境 `geminiProxy`），成功產出 3 則繁中話題建議 |
+| §5.3a | AI 語音/文字快速記錄 | Codex 在 `codex/ai-quick-log-and-proactive-reminders` 完成後端 + 前端雛型，但該分支落後 main 太多（拆分導覽/i18n 之前的舊結構），**已手動整合**：後端 `functions/src/index.ts` 的 `parseQuickCapturePreview` action 原封不動採用；前端把 `QuickCaptureDialog`/`ContactInteractionsDialog` 多聯絡人綁定邏輯搬到現在的檔案結構上，補回 i18n（Codex 版本沒有），修正 `<Stack direction="row">` 型別地雷（見 CLAUDE.md §7），服務層與建議話題共用同一個 `geminiService.ts`。**已在真實瀏覽器端到端測過**：文字輸入「今天跟王小明喝咖啡...兩週後提醒我」→ AI 正確比對既有聯絡人、產生互動摘要、推算提醒日期（+14 天）→ 確認寫入後 Interaction 與 `Contact.nextContactReminder` 都正確落地 |
+| §5.6 | AI 主動提醒（生日/久未聯絡） | 後端 `generateProactiveSuggestionsDaily` 排程函式（每日 9:00 Asia/Taipei）已部署；規則邏輯（生日前 3 天、無互動 60 天、去重不重複提醒已標記完成的建議）已 code review 確認符合 spec。前端 `AISuggestionsPanel` 已接進首頁。**未能用真實資料端到端驗證**——Firestore Security Rules 正確擋掉客戶端直接寫入 `suggestions`（只允許後端 Admin SDK 建立、客戶端只能改 `status`），排程本身又是每日觸發，這次沒有 gcloud CLI 可以手動觸發一次；UI 邏輯是比照已驗證過的 `RemindersPanel`/`ContactInteractionsDialog` 的 subscribe/store pattern 寫的，但**建議找一天等排程真的跑過一次後，實際打開首頁看一次「今天需要處理」卡片會不會正確顯示、採納/修改/忽略三個按鈕是否正常運作** |
 
 ---
 
@@ -36,10 +38,8 @@
 
 | 章節 | 功能 | 依賴/備註 |
 |---|---|---|
-| §5.3a | AI 語音/文字快速記錄 | 需要 Cloud Function（**已指派 Codex**，見下方） |
 | §5.5 項目1 | 名片 OCR | 需要 Cloud Function + Gemini（**已指派 Codex**：先把 `geminiProxy` 既有 `extractContactFromCard` action 換成 `gemini-3.1-flash-lite`） |
 | §5.5a | AI 問答秘書（聊天） | 需要 Cloud Function，「先查詢後生成」二階段設計 |
-| §5.6 | AI 主動提醒（生日/久未聯絡） | 需要 Cloud Scheduler + `AgentSuggestion`（**已指派 Codex**，見 `codex/ai-quick-log-and-proactive-reminders`） |
 | §5.7 | 文件通訊錄批次匯入 | 需要 Cloud Function 解析 PDF/Word/Excel |
 | §5.8 | 網路身分研究摘要 + 照片搜尋 | 需要 Cloud Function + Google Search 工具 |
 | §5.9 | Google 聯絡人 API 匯入 | 需要額外 OAuth scope（People API），vCard 部分已完成 |
@@ -107,3 +107,6 @@ main
 
 ### Codex 任務指派
 已交給 Codex 一個任務（見對話紀錄，此處摘要）：把 `functions/src/index.ts` 內 `geminiProxy` 的 4 個 action（`getNetworkingAdvice`、`extractContactFromCard`、`getSuggestedTopics`、`getProfileSummary`）模型從 `gemini-2.0-flash-exp` 換成 `gemini-3.1-flash-lite`，範圍限定在該檔案，驗收方式是 `cd functions && npm run build` + emulator 手動測試。這是後續所有 AI 功能（§5.3a、§5.5、§5.6 等）的前置工作。
+
+### 經驗教訓：分支存活時間不要拉太長
+Codex 的 `codex/ai-quick-log-and-proactive-reminders` 分支做 §5.3a/§5.6 時，main 同時完成了導覽拆分（`HomeScreen.tsx` → `NavShell`+`DashboardScreen`）跟 i18n 全站改造，導致 rebase 直接衝突（`HomeScreen.tsx` modify/delete），前端部分只能手動搬移、補回 i18n。**後端（`functions/src/index.ts`）完全沒事**，因為 main 那段時間完全沒人動這個檔案。這印證了 TASKS.md 一開始就寫的分工原則（`functions/` 跟 `src/` 分開最適合並行）：**Cloud Function 本體的分支可以放心跑久一點，但只要有碰 `src/ui`，就該盡快 rebase/合併，不要累積太多天**，尤其是 UI 骨架/i18n 這類全站性重構進行中的時候。
