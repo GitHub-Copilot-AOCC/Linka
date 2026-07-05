@@ -18,10 +18,12 @@
 |---|---|---|
 | §5.1 | 帳號登入/註冊/登出、忘記密碼 | Email/密碼完整；**Google OAuth 程式碼寫好但被卡在主控台手動啟用**（需要 OAuth client_id，API 無法代辦） |
 | §5.2 | 聯絡人 CRUD 全套 | 新增/編輯/刪除、搜尋、依姓名/星級排序、標籤與社交圈篩選 |
+| §5.2 | 聯絡人照片上傳（Storage） | Canvas 壓縮 + 上傳/刪除已完成；**檔案選擇的實際點擊互動尚未手動測過**（自動化工具在這個環境模擬不了真實檔案選取），合併前建議手動點一次驗證 |
 | §5.3 | 互動紀錄（手動） | 會議/通話/Email 記錄，綁定聯絡人 |
 | §5.4 | 提醒（手動） | 設定下次聯絡日期 + 首頁待辦面板 |
 | §5.10 | 操作歷史紀錄 | append-only，記錄 CRUD + 互動操作 |
 | §5.11 | 離線/同步狀態指示 | Firestore offline persistence 本來就有，這次補上 UI 三態顯示 |
+| §11.2 | Material 導覽（Bottom Nav/Rail） | 手機用底部導覽、桌面用側邊 Rail，已驗證兩種寬度切換正確 |
 
 ---
 
@@ -30,9 +32,8 @@
 | 章節 | 功能 | 依賴/備註 |
 |---|---|---|
 | §5.1 | Google OAuth 啟用 | 卡在人工手動點 Console，不是程式碼工作 |
-| §5.2 | 聯絡人照片上傳（Storage） | 目前完全沒做 |
-| §5.3a | AI 語音/文字快速記錄 | 需要 Cloud Function |
-| §5.5 項目1 | 名片 OCR | 需要 Cloud Function + Gemini |
+| §5.3a | AI 語音/文字快速記錄 | 需要 Cloud Function（**已指派 Codex**，見下方） |
+| §5.5 項目1 | 名片 OCR | 需要 Cloud Function + Gemini（**已指派 Codex**：先把 `geminiProxy` 既有 `extractContactFromCard` action 換成 `gemini-3.1-flash-lite`） |
 | §5.5a | AI 問答秘書（聊天） | 需要 Cloud Function，「先查詢後生成」二階段設計 |
 | §5.5 項目4 | AI 建議話題 | 需要 Cloud Function |
 | §5.6 | AI 主動提醒（生日/久未聯絡） | 需要 Cloud Scheduler + `AgentSuggestion` |
@@ -40,10 +41,9 @@
 | §5.8 | 網路身分研究摘要 + 照片搜尋 | 需要 Cloud Function + Google Search 工具 |
 | §5.9 | Google 聯絡人/vCard 匯入 | 前端工作，需要 OAuth scope 或檔案解析 |
 | §5.12 | 多語言（i18next） | 目前全部中文寫死 |
-| §11.2 | Material 導覽（Bottom Nav/Rail） | 目前只有簡易 AppBar，沒有正式導覽架構 |
 | §8.4 | Stripe 訂閱整合 | 完全沒開始 |
 | §3 | 免費版額度實際限制（UsageQuota 執行） | 資料模型有欄位，但沒有真正計費配額的邏輯 |
-| — | Cloud Functions 本體 | `functions/` 目錄目前是舊版程式碼，`geminiProxy` 需要全面重寫擴充 |
+| — | Cloud Functions 本體 | `functions/` 目錄目前是舊版程式碼，`geminiProxy` 需要全面重寫擴充；**第一個任務已交給 Codex**：把 4 個既有 action 的模型從 `gemini-2.0-flash-exp` 換成 `gemini-3.1-flash-lite` |
 
 ---
 
@@ -73,7 +73,7 @@
 - 若時間緊迫必須立刻並行，同事可以先從 `feature/operation-log` 開分支（拿到最新的 domain 型別定義如 `Interaction`、`Tag`、`LogEntry`），但要留意之後合併回 `main` 時的分支順序。
 
 ### 目前分支狀態（2026-07-05）
-以下分支依序疊加（每個都包含前一個的所有變更），`feature/operation-log` 是目前最新、包含全部 9 個功能的分支：
+以下分支依序疊加（每個都包含前一個的所有變更），`feature/contact-photos` 是目前最新、包含全部 11 個功能的分支：
 
 ```
 main
@@ -85,9 +85,16 @@ main
                      └─ feature/contacts-search-sort
                          └─ feature/tags
                              └─ feature/offline-status
-                                 └─ feature/operation-log   ← 最新
+                                 └─ feature/operation-log
+                                     └─ feature/nav-shell
+                                         └─ feature/contact-photos   ← 最新
 ```
 
 合併方式二選一：
-1. **簡單**：直接把 `feature/operation-log` 合併進 `main`（一次拿到全部 9 個功能）
+1. **簡單**：直接把 `feature/contact-photos` 合併進 `main`（一次拿到全部 11 個功能）
 2. **逐步**：依上圖順序一個個合併，方便逐個 review
+
+**合併前提醒**：`feature/contact-photos` 的照片上傳互動還沒手動點過（見上方已完成表格的備註），建議合併前先手動測一次「新增照片」按鈕。
+
+### Codex 任務指派
+已交給 Codex 一個任務（見對話紀錄，此處摘要）：把 `functions/src/index.ts` 內 `geminiProxy` 的 4 個 action（`getNetworkingAdvice`、`extractContactFromCard`、`getSuggestedTopics`、`getProfileSummary`）模型從 `gemini-2.0-flash-exp` 換成 `gemini-3.1-flash-lite`，範圍限定在該檔案，驗收方式是 `cd functions && npm run build` + emulator 手動測試。這是後續所有 AI 功能（§5.3a、§5.5、§5.6 等）的前置工作。
