@@ -1,25 +1,28 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
+  Alert,
+  Autocomplete,
   Button,
-  TextField,
-  MenuItem,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Divider,
+  IconButton,
   List,
   ListItem,
   ListItemText,
-  IconButton,
-  Divider,
+  MenuItem,
+  TextField,
   Typography,
-  Alert,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useTranslation } from 'react-i18next';
 import { useInteractionsStore } from '@ui/store/interactionsStore';
+import { useContactsStore } from '@ui/store/contactsStore';
 import { todayDateString } from '@domain/interaction';
 import type { InteractionType } from '@domain/interaction';
+import type { Contact } from '@domain/contact';
 
 interface ContactInteractionsDialogProps {
   uid: string;
@@ -29,14 +32,16 @@ interface ContactInteractionsDialogProps {
   onClose: () => void;
 }
 
-/** 互動紀錄對話框（見 spec.md §5.3）：顯示歷史 + 新增表單，日期預設今天、無獨立標題欄位。 */
+/** 互動紀錄對話框（見 spec.md §5.3）：顯示歷史 + 新增表單，日期預設今天、無獨立標題欄位，可綁定多位聯絡人（見 §7 Interaction）。 */
 export function ContactInteractionsDialog({ uid, contactId, contactName, open, onClose }: ContactInteractionsDialogProps) {
   const { byContactId, subscribe, add, remove } = useInteractionsStore();
+  const contacts = useContactsStore((state) => state.contacts);
   const { t } = useTranslation();
   const interactions = byContactId[contactId] ?? [];
   const [type, setType] = useState<InteractionType>('meeting');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(todayDateString());
+  const [selectedContacts, setSelectedContacts] = useState<Contact[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const TYPE_LABEL: Record<InteractionType, string> = {
@@ -51,8 +56,18 @@ export function ContactInteractionsDialog({ uid, contactId, contactName, open, o
     return unsubscribe;
   }, [open, uid, contactId, subscribe]);
 
+  useEffect(() => {
+    if (!open) return;
+    const primaryContact = contacts.find((contact) => contact.id === contactId);
+    setSelectedContacts(primaryContact ? [primaryContact] : []);
+  }, [contactId, contacts, open]);
+
+  const contactOptions = useMemo(() => contacts, [contacts]);
+
   async function handleAdd() {
-    const result = await add(uid, { contactIds: [contactId], type, description, date }, contactName);
+    const contactIds = selectedContacts.length > 0 ? selectedContacts.map((contact) => contact.id) : [contactId];
+    const label = selectedContacts.map((contact) => contact.name).join('、') || contactName;
+    const result = await add(uid, { contactIds, type, description, date }, label);
     if (result.ok) {
       setDescription('');
       setDate(todayDateString());
@@ -68,6 +83,16 @@ export function ContactInteractionsDialog({ uid, contactId, contactName, open, o
       <DialogContent>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
+        <Autocomplete
+          multiple
+          options={contactOptions}
+          value={selectedContacts}
+          getOptionLabel={(option) => option.name}
+          isOptionEqualToValue={(option, value) => option.id === value.id}
+          onChange={(_, value) => setSelectedContacts(value)}
+          renderInput={(params) => <TextField {...params} label={t('interactionsDialog.boundContacts')} margin="dense" />}
+          sx={{ mt: 1 }}
+        />
         <TextField
           select
           label={t('interactionsDialog.type')}
