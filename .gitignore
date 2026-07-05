@@ -11,6 +11,8 @@ lerna-debug.log*
 node_modules
 .pnp
 .pnp.js
+.npm-cache
+functions/node_modules.broken-*
 
 # Build
 dist

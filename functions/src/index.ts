@@ -39,25 +39,26 @@ type QuickCaptureActionPayload = {
 type QuickCapturePreview = {
     summary: string;
     contactMatches: Array<{
+        referenceId: string;
         matchedContactIds: string[];
         suggestedNewContactName?: string;
         confidence: "high" | "medium" | "low";
         reason: string;
     }>;
     suggestedInteractions: Array<{
-        contactIds: string[];
+        contactReferenceIds: string[];
         type: "meeting" | "call" | "email";
         date: string;
         description: string;
         rawInput?: string;
     }>;
     reminderSuggestions: Array<{
-        contactId: string;
+        contactReferenceId: string;
         suggestedDate: string;
         reason: string;
     }>;
     importanceSuggestions: Array<{
-        contactId: string;
+        contactReferenceId: string;
         suggestedImportance: 1 | 2 | 3 | 4 | 5;
         reason: string;
     }>;
@@ -78,7 +79,7 @@ const cleanAndParseJson = (text: string) => {
     try {
         const cleaned = text.replace(/```json\n?|\n?```/g, "").trim();
         return JSON.parse(cleaned);
-    } catch (e) {
+    } catch (error) {
         console.error("Failed to parse JSON:", text);
         throw new Error("Invalid JSON response from AI model");
     }
@@ -123,17 +124,19 @@ Existing contacts:
 ${JSON.stringify(contacts)}
 
 Your task:
-1. Resolve people mentioned in the user's input against existing contacts when possible.
-2. If no match exists, suggest a new contact name.
-3. Split a single input into one or more interaction records when multiple people are mentioned.
-4. Infer a concrete YYYY-MM-DD reminder date when the input implies a follow-up time.
-5. Suggest importance updates only when the signal is meaningful.
-6. Rewrite the user's free-form note into concise interaction descriptions.
+1. Resolve every person mentioned in the user's input against existing contacts when possible.
+2. Create a stable referenceId for each person, such as "person_1", "person_2".
+3. If no existing contact matches, keep matchedContactIds empty and fill suggestedNewContactName.
+4. Split the input into one or more interaction records when multiple people are mentioned.
+5. Infer a concrete YYYY-MM-DD reminder date when the input implies a follow-up time.
+6. Suggest importance updates only when the signal is meaningful.
+7. Rewrite the user's free-form note into concise interaction descriptions.
 
 Rules:
 - Return preview data only. Do not write to any database.
 - Every suggested interaction must use only "meeting", "call", or "email".
 - Use Traditional Chinese for summary, descriptions, and reasons.
+- Use the same referenceId consistently across contactMatches, suggestedInteractions, reminderSuggestions, and importanceSuggestions.
 - If the input is ambiguous, use lower confidence and explain why.
 
 Return JSON with this exact shape:
@@ -141,6 +144,7 @@ Return JSON with this exact shape:
   "summary": "string",
   "contactMatches": [
     {
+      "referenceId": "person_1",
       "matchedContactIds": ["contact-id"],
       "suggestedNewContactName": "optional string",
       "confidence": "high|medium|low",
@@ -149,7 +153,7 @@ Return JSON with this exact shape:
   ],
   "suggestedInteractions": [
     {
-      "contactIds": ["contact-id"],
+      "contactReferenceIds": ["person_1"],
       "type": "meeting|call|email",
       "date": "YYYY-MM-DD",
       "description": "string",
@@ -158,14 +162,14 @@ Return JSON with this exact shape:
   ],
   "reminderSuggestions": [
     {
-      "contactId": "contact-id",
+      "contactReferenceId": "person_1",
       "suggestedDate": "YYYY-MM-DD",
       "reason": "string"
     }
   ],
   "importanceSuggestions": [
     {
-      "contactId": "contact-id",
+      "contactReferenceId": "person_1",
       "suggestedImportance": 1,
       "reason": "string"
     }
@@ -211,7 +215,7 @@ const buildRuleBasedSuggestions = async (uid: string) => {
                 suggestions.push({
                     contactId,
                     type: "birthday",
-                    message: `再 ${BIRTHDAY_LEAD_DAYS} 天就是 ${data.name} 的生日，建議準備生日祝福。`,
+                    message: `${data.name} 將在 ${BIRTHDAY_LEAD_DAYS} 天後生日，適合提前安排祝福或聯絡。`,
                     status: "pending",
                     triggerDate: birthdayTargetIso,
                     createdAt: Date.now(),
@@ -223,7 +227,7 @@ const buildRuleBasedSuggestions = async (uid: string) => {
             suggestions.push({
                 contactId,
                 type: "manual_reminder_due",
-                message: `${data.name} 的手動提醒日期已到，建議安排聯絡。`,
+                message: `${data.name} 的手動提醒已到期，現在可以安排跟進。`,
                 status: "pending",
                 triggerDate: data.nextContactReminder,
                 createdAt: Date.now(),
@@ -235,7 +239,7 @@ const buildRuleBasedSuggestions = async (uid: string) => {
             suggestions.push({
                 contactId,
                 type: "long_silence",
-                message: `${data.name} 已超過 ${LONG_SILENCE_DAYS} 天沒有互動，建議主動聯絡。`,
+                message: `${data.name} 已經超過 ${LONG_SILENCE_DAYS} 天沒有互動，值得重新聯絡。`,
                 status: "pending",
                 triggerDate: todayIso,
                 createdAt: Date.now(),
@@ -248,11 +252,20 @@ const buildRuleBasedSuggestions = async (uid: string) => {
 
 const persistSuggestions = async (uid: string, suggestions: SuggestionRecord[]) => {
     const batch = db.batch();
+
     for (const suggestion of suggestions) {
         const docId = `${suggestion.type}_${suggestion.contactId}_${suggestion.triggerDate}`;
         const ref = db.collection("users").doc(uid).collection("suggestions").doc(docId);
+        const existing = await ref.get();
+        const existingStatus = existing.data()?.status as string | undefined;
+
+        if (existing.exists && existingStatus && existingStatus !== "pending") {
+            continue;
+        }
+
         batch.set(ref, suggestion, { merge: true });
     }
+
     await batch.commit();
 };
 
@@ -270,11 +283,9 @@ export const geminiProxy = onRequest({
     }
 
     const { action, payload } = request.body;
-    console.log(`Action: ${action}`, { payloadKeys: Object.keys(payload || {}) });
 
     const apiKey = GEMINI_API_KEY.value();
     if (!apiKey) {
-        console.error("API Key missing");
         response.status(500).json({ error: "The Gemini API Key is not configured." });
         return;
     }
@@ -283,21 +294,21 @@ export const geminiProxy = onRequest({
 
     try {
         let result;
+
         switch (action) {
             case "getNetworkingAdvice": {
                 const { chatHistory, userInput, systemPrompt } = payload;
-                console.log("Generating networking advice...");
                 const model = genAI.getGenerativeModel({
                     model: GEMINI_MODEL,
                     systemInstruction: systemPrompt,
                     generationConfig: {
-                        responseMimeType: "application/json"
-                    }
+                        responseMimeType: "application/json",
+                    },
                 });
                 const apiResult = await model.generateContent({
                     contents: chatHistory.map((msg: { role: string; text: string }) => ({
                         role: msg.role === "user" ? "user" : "model",
-                        parts: [{ text: msg.text }]
+                        parts: [{ text: msg.text }],
                     })).concat([{ role: "user", parts: [{ text: userInput }] }]),
                 });
                 result = cleanAndParseJson(apiResult.response.text());
@@ -306,12 +317,11 @@ export const geminiProxy = onRequest({
 
             case "extractContactFromCard": {
                 const { base64Data, mimeType, prompt } = payload;
-                console.log("Extracting contact from card...");
                 const model = genAI.getGenerativeModel({
                     model: GEMINI_MODEL,
                     generationConfig: {
-                        responseMimeType: "application/json"
-                    }
+                        responseMimeType: "application/json",
+                    },
                 });
                 const apiResult = await model.generateContent({
                     contents: [
@@ -335,13 +345,12 @@ export const geminiProxy = onRequest({
 
             case "getSuggestedTopics": {
                 const { prompt, systemInstruction } = payload;
-                console.log("Getting suggested topics...");
                 const model = genAI.getGenerativeModel({
                     model: GEMINI_MODEL,
                     systemInstruction,
                     generationConfig: {
-                        responseMimeType: "application/json"
-                    }
+                        responseMimeType: "application/json",
+                    },
                 });
                 const apiResult = await model.generateContent({
                     contents: [{ role: "user", parts: [{ text: prompt }] }],
@@ -352,13 +361,12 @@ export const geminiProxy = onRequest({
 
             case "getProfileSummary": {
                 const { prompt, systemInstruction } = payload;
-                console.log("Getting profile summary...");
                 const model = genAI.getGenerativeModel({
                     model: GEMINI_MODEL,
                     systemInstruction,
                     generationConfig: {
                         temperature: 0.5,
-                    }
+                    },
                 });
                 const apiResult = await model.generateContent({
                     contents: [{ role: "user", parts: [{ text: prompt }] }],
@@ -373,13 +381,14 @@ export const geminiProxy = onRequest({
                 const model = genAI.getGenerativeModel({
                     model: GEMINI_MODEL,
                     generationConfig: {
-                        responseMimeType: "application/json"
-                    }
+                        responseMimeType: "application/json",
+                    },
                 });
                 const parts: Array<
                     { text: string } |
                     { inlineData: { data: string; mimeType: string } }
                 > = [];
+
                 if (quickCapturePayload.audioBase64 && quickCapturePayload.audioMimeType) {
                     parts.push({
                         inlineData: {
@@ -388,9 +397,11 @@ export const geminiProxy = onRequest({
                         },
                     });
                 }
+
                 if (quickCapturePayload.textInput) {
                     parts.push({ text: `User input: ${quickCapturePayload.textInput}` });
                 }
+
                 parts.push({ text: prompt });
 
                 const apiResult = await model.generateContent({

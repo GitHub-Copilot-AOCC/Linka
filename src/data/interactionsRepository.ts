@@ -9,7 +9,7 @@ import {
   orderBy,
 } from 'firebase/firestore';
 import { db } from './firebase';
-import type { Interaction, NewInteractionInput } from '@domain/interaction';
+import type { CreateInteractionInput, Interaction } from '@domain/interaction';
 
 // Firestore 路徑：users/{uid}/interactions/{interactionId}（見 spec.md §7，v1 獨立集合）
 
@@ -47,12 +47,17 @@ export function subscribeInteractionsForContact(
   });
 }
 
-export async function createInteraction(uid: string, input: NewInteractionInput): Promise<string> {
-  const ref = await addDoc(interactionsCollection(uid), {
+export async function createInteraction(uid: string, input: CreateInteractionInput): Promise<string> {
+  const data: Record<string, unknown> = {
     ...input,
-    source: 'manual',
+    source: input.source ?? 'manual',
     createdAt: Date.now(),
-  });
+  };
+  if (input.rawInput) {
+    data.rawInput = input.rawInput;
+  }
+
+  const ref = await addDoc(interactionsCollection(uid), data);
   return ref.id;
 }
 

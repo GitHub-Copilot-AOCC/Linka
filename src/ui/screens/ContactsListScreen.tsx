@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Card,
@@ -20,8 +20,10 @@ import {
   ToggleButton,
   ToggleButtonGroup,
   Chip,
+  Tooltip,
 } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import StarIcon from '@mui/icons-material/Star';
 import HistoryIcon from '@mui/icons-material/History';
 import AlarmIcon from '@mui/icons-material/Alarm';
@@ -37,15 +39,16 @@ import { SetReminderDialog } from '@ui/components/SetReminderDialog';
 import { EditContactDialog } from '@ui/components/EditContactDialog';
 import { DeleteContactDialog } from '@ui/components/DeleteContactDialog';
 import { TagsManagerDialog } from '@ui/components/TagsManagerDialog';
+import { QuickCaptureDialog } from '@ui/components/QuickCaptureDialog';
 
 interface ContactsListScreenProps {
   uid: string;
 }
 
-/** 聯絡人列表：卡片式呈現（見 spec.md §11.4），對照 §5.2 聯絡人管理。 */
 export function ContactsListScreen({ uid }: ContactsListScreenProps) {
   const { contacts, subscribe, add } = useContactsStore();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [quickCaptureOpen, setQuickCaptureOpen] = useState(false);
   const [name, setName] = useState('');
   const [company, setCompany] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
@@ -68,9 +71,9 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
 
   useEffect(() => subscribeTags(uid), [uid, subscribeTags]);
 
-  const visibleContacts = sortContacts(
-    filterContactsByTag(filterContactsByKeyword(contacts, keyword), activeTagId),
-    sortBy
+  const visibleContacts = useMemo(
+    () => sortContacts(filterContactsByTag(filterContactsByKeyword(contacts, keyword), activeTagId), sortBy),
+    [contacts, keyword, activeTagId, sortBy]
   );
 
   async function handleSubmit() {
@@ -82,12 +85,12 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
       setFormError(null);
       setDialogOpen(false);
     } else {
-      setFormError(Object.values(result.errors ?? {})[0] ?? '新增失敗');
+      setFormError(Object.values(result.errors ?? {})[0] ?? '新增聯絡人失敗');
     }
   }
 
   return (
-    <Box sx={{ p: 2, pb: 10 }}>
+    <Box sx={{ p: 2, pb: 14 }}>
       <Typography variant="h5" sx={{ mb: 2 }}>
         聯絡人
       </Typography>
@@ -96,9 +99,9 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
         <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
           <TextField
             size="small"
-            placeholder="搜尋姓名/公司/職稱"
+            placeholder="搜尋姓名、公司或職稱"
             value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
+            onChange={(event) => setKeyword(event.target.value)}
             slotProps={{ input: { startAdornment: <SearchIcon fontSize="small" sx={{ mr: 1 }} /> } }}
             sx={{ flex: 1, minWidth: 200 }}
           />
@@ -108,12 +111,14 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
             value={sortBy}
             onChange={(_, value) => value && setSortBy(value)}
           >
-            <ToggleButton value="name">依姓名</ToggleButton>
-            <ToggleButton value="importance">依星級</ToggleButton>
+            <ToggleButton value="name">姓名</ToggleButton>
+            <ToggleButton value="importance">星級</ToggleButton>
           </ToggleButtonGroup>
-          <IconButton aria-label="標籤管理" onClick={() => setTagsManagerOpen(true)}>
-            <LocalOfferIcon fontSize="small" />
-          </IconButton>
+          <Tooltip title="管理標籤">
+            <IconButton aria-label="管理標籤" onClick={() => setTagsManagerOpen(true)}>
+              <LocalOfferIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
         </Box>
       )}
 
@@ -132,12 +137,10 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
         </Box>
       )}
 
-      {contacts.length === 0 && (
-        <Typography color="text.secondary">還沒有聯絡人，點右下角按鈕新增第一位。</Typography>
-      )}
+      {contacts.length === 0 && <Typography color="text.secondary">還沒有聯絡人，先新增第一筆資料吧。</Typography>}
 
       {contacts.length > 0 && visibleContacts.length === 0 && (
-        <Typography color="text.secondary">找不到符合「{keyword}」的聯絡人。</Typography>
+        <Typography color="text.secondary">目前沒有符合篩選條件的聯絡人。</Typography>
       )}
 
       <Stack spacing={1.5}>
@@ -148,32 +151,38 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
               <Box sx={{ flex: 1 }}>
                 <Typography variant="subtitle1">{contact.name}</Typography>
                 <Typography variant="body2" color="text.secondary">
-                  {[contact.role, contact.company].filter(Boolean).join(' · ') || ' '}
+                  {[contact.role, contact.company].filter(Boolean).join(' · ') || '未填寫職稱或公司'}
                 </Typography>
               </Box>
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
                 <StarIcon fontSize="small" color={contact.importance >= 4 ? 'warning' : 'disabled'} />
                 <Typography variant="body2">{contact.importance}</Typography>
               </Box>
-              <IconButton
-                aria-label="設定提醒"
-                onClick={() => setReminderContactId(contact.id)}
-                color={contact.nextContactReminder ? 'primary' : 'default'}
-              >
-                <AlarmIcon fontSize="small" />
-              </IconButton>
-              <IconButton aria-label="互動紀錄" onClick={() => setActiveContactId(contact.id)}>
-                <HistoryIcon fontSize="small" />
-              </IconButton>
-              <IconButton
-                aria-label="更多操作"
-                onClick={(e) => {
-                  setMenuAnchor(e.currentTarget);
-                  setMenuContactId(contact.id);
-                }}
-              >
-                <MoreVertIcon fontSize="small" />
-              </IconButton>
+              <Tooltip title="設定提醒">
+                <IconButton
+                  aria-label="設定提醒"
+                  onClick={() => setReminderContactId(contact.id)}
+                  color={contact.nextContactReminder ? 'primary' : 'default'}
+                >
+                  <AlarmIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="互動紀錄">
+                <IconButton aria-label="互動紀錄" onClick={() => setActiveContactId(contact.id)}>
+                  <HistoryIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="更多操作">
+                <IconButton
+                  aria-label="更多操作"
+                  onClick={(event) => {
+                    setMenuAnchor(event.currentTarget);
+                    setMenuContactId(contact.id);
+                  }}
+                >
+                  <MoreVertIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
             </CardContent>
           </Card>
         ))}
@@ -201,7 +210,7 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
       {editContactId && (
         <EditContactDialog
           uid={uid}
-          contact={contacts.find((c) => c.id === editContactId)!}
+          contact={contacts.find((contact) => contact.id === editContactId)!}
           open
           onClose={() => setEditContactId(null)}
         />
@@ -211,7 +220,7 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
         <DeleteContactDialog
           uid={uid}
           contactId={deleteContactId}
-          contactName={contacts.find((c) => c.id === deleteContactId)?.name ?? ''}
+          contactName={contacts.find((contact) => contact.id === deleteContactId)?.name ?? ''}
           open
           onClose={() => setDeleteContactId(null)}
         />
@@ -223,7 +232,7 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
         <ContactInteractionsDialog
           uid={uid}
           contactId={activeContactId}
-          contactName={contacts.find((c) => c.id === activeContactId)?.name ?? ''}
+          contactName={contacts.find((contact) => contact.id === activeContactId)?.name ?? ''}
           open
           onClose={() => setActiveContactId(null)}
         />
@@ -232,39 +241,58 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
       {reminderContactId && (
         <SetReminderDialog
           uid={uid}
-          contact={contacts.find((c) => c.id === reminderContactId)!}
+          contact={contacts.find((contact) => contact.id === reminderContactId)!}
           open
           onClose={() => setReminderContactId(null)}
         />
       )}
 
-      <Fab
-        color="primary"
-        sx={{ position: 'fixed', bottom: 24, right: 24 }}
-        onClick={() => setDialogOpen(true)}
-        aria-label="新增聯絡人"
-      >
-        <AddIcon />
-      </Fab>
+      <QuickCaptureDialog uid={uid} contacts={contacts} open={quickCaptureOpen} onClose={() => setQuickCaptureOpen(false)} />
+
+      <Tooltip title="AI 快速記錄">
+        <Fab
+          color="primary"
+          sx={{ position: 'fixed', bottom: 24, right: 24 }}
+          onClick={() => setQuickCaptureOpen(true)}
+          aria-label="AI 快速記錄"
+        >
+          <AutoAwesomeIcon />
+        </Fab>
+      </Tooltip>
+
+      <Tooltip title="新增聯絡人">
+        <Fab
+          color="default"
+          sx={{ position: 'fixed', bottom: 96, right: 24 }}
+          onClick={() => setDialogOpen(true)}
+          aria-label="新增聯絡人"
+        >
+          <PersonAddIcon />
+        </Fab>
+      </Tooltip>
 
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} fullWidth maxWidth="xs">
         <DialogTitle>新增聯絡人</DialogTitle>
         <DialogContent>
-          {formError && <Alert severity="error" sx={{ mb: 2 }}>{formError}</Alert>}
+          {formError && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {formError}
+            </Alert>
+          )}
           <TextField
             autoFocus
             label="姓名"
             fullWidth
             margin="dense"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(event) => setName(event.target.value)}
           />
           <TextField
             label="公司"
             fullWidth
             margin="dense"
             value={company}
-            onChange={(e) => setCompany(e.target.value)}
+            onChange={(event) => setCompany(event.target.value)}
           />
         </DialogContent>
         <DialogActions>

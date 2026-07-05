@@ -3,10 +3,10 @@ import { AppBar, Toolbar, Typography, Button, Box } from '@mui/material';
 import { useAuthStore } from '@ui/store/authStore';
 import { ContactsListScreen } from '@ui/screens/ContactsListScreen';
 import { RemindersPanel } from '@ui/components/RemindersPanel';
+import { AISuggestionsPanel } from '@ui/components/AISuggestionsPanel';
 import { SyncStatusChip } from '@ui/components/SyncStatusChip';
 import { OperationLogDialog } from '@ui/components/OperationLogDialog';
 
-/** 首頁殼層：暫時的頂部列 + 登出（完整導覽見 spec.md §11.2，後續功能再補）。 */
 export function HomeScreen() {
   const { user, logout } = useAuthStore();
   const [logOpen, setLogOpen] = useState(false);
@@ -20,7 +20,7 @@ export function HomeScreen() {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <SyncStatusChip />
             <Button size="small" onClick={() => setLogOpen(true)}>
-              操作歷史
+              操作紀錄
             </Button>
             <Typography variant="body2" color="text.secondary">
               {user.email}
@@ -31,6 +31,7 @@ export function HomeScreen() {
           </Box>
         </Toolbar>
       </AppBar>
+      <AISuggestionsPanel uid={user.uid} />
       <RemindersPanel uid={user.uid} />
       <ContactsListScreen uid={user.uid} />
       <OperationLogDialog uid={user.uid} open={logOpen} onClose={() => setLogOpen(false)} />
