@@ -21,11 +21,8 @@ function ContactsRoute() {
   return <ContactsListScreen uid={user.uid} />;
 }
 
-// 開發階段暫時用 index-new.html 作為獨立進入點（與舊版並存，見 CLAUDE.md §1）；
-// Router 用 basename 對應到這個路徑，之後正式取代舊版 index.html 時把 basename 移除即可。
-const ROUTER_BASENAME = '/index-new.html';
-
 // v1 重寫的新進入點。帳號系統見 spec.md §5.1：Email/密碼 + Google OAuth，取代先前開發階段的匿名登入暫時做法。
+// index.html 已正式改為指向這個入口（舊版移至 index-legacy.html 保留參考），故 Router 不再需要 basename。
 function App() {
   const init = useAuthStore((s) => s.init);
   const { t } = useTranslation();
@@ -45,7 +42,7 @@ function App() {
   }
 
   return (
-    <BrowserRouter basename={ROUTER_BASENAME}>
+    <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginScreen />} />
         <Route path="/register" element={<RegisterScreen />} />

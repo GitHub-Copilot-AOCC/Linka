@@ -12,6 +12,7 @@
 - [x] Firebase 專案設定：Firestore + Security Rules、Storage + Security Rules、Auth（Email/密碼已啟用）、Hosting、Cloud Functions IAM 權限
 - [x] CI/CD（GitHub Actions 部署到 Firebase Hosting + Functions）
 - [x] Gemini 模型定案（`gemini-3.1-flash-lite`，見 spec.md §8.5）
+- [x] **重大缺口修復**：`index.html` 原本一直指向舊版 `index.tsx`/`App.tsx`，`vite build`／根目錄 dev server 出的其實是舊版 App，新版只能靠手動打 `/index-new.html` 才看得到——代表這幾天所有已合併的 `src/` 功能實際上從沒被真正打包/部署出去過。已將 `index-new.html` 內容提升為正式 `index.html`，舊版移到 `index-legacy.html` 保留參考；同時移除 `src/main.tsx` 裡寫死的 Router `basename="/index-new.html"`（否則根路徑會直接白畫面）。已用瀏覽器實測根路徑、`/contacts`、`/settings` 路由正常。**下次部署（`firebase deploy --only hosting`）出去的才會是真正的新版 App，這點務必讓 Codex 跟其他協作者知道。**
 
 ### 功能
 | 章節 | 功能 | 備註 |
