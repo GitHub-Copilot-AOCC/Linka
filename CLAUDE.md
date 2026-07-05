@@ -92,6 +92,6 @@ src/ui              — React 元件、畫面、路由（僅此層可以是 Web-
 | 多語言 | i18next / react-i18next |
 | 後端 | Firebase（Firestore / Auth / Storage / Cloud Functions） |
 | 前端部署 | Firebase Hosting（非 Vercel、非 GitHub Pages） |
-| AI | Gemini，透過 Cloud Function 代理（`geminiProxy`），前端不可直接持有 API Key |
+| AI | Gemini `gemini-3.1-flash-lite`（v1 預設模型，見 spec.md §8.5），透過 Cloud Function 代理（`geminiProxy`），前端不可直接持有 API Key |
 | 支付 | Stripe（Web 訂閱） |
 | 未來手機版元件庫 | `react-native-paper`（與 Web 共用同一份 Material 3 token） |

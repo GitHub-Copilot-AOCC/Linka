@@ -377,6 +377,7 @@ users/{uid}/contacts/{contactId}/photos/{photoId}.jpg
 - 手機版上線後需另接 IAP，資料模型已預留 `subscriptionSource` 欄位因應
 
 ### 8.5 快速記錄與 AI 個人秘書 Agent 架構
+- **預設 Gemini 模型（v1 定案）**：所有 AI 功能統一使用 **`gemini-3.1-flash-lite`**（取代舊版沿用的 `gemini-2.0-flash-exp`）。理由：`gemini-2.0-flash-exp` 是實驗性模型，隨時可能被下架；`gemini-3.1-flash-lite` 已脫離 preview 階段，功能對標更新，速度快、成本低，適合 OCR/快速記錄/話題建議等高頻率呼叫場景。若未來特定功能需要更強推理能力（例如 §5.5a 問答模式的查詢規劃），可個別評估換用 `gemini-3.1-pro-preview`，但預覽版模型不作為預設值。
 - **語音／自然語言快速記錄（5.3a）**：與 §5.7 文件批次匯入共用「非結構化輸入 → Gemini 結構化 JSON 輸出 → 前端預覽確認 → 寫入 Firestore」的模式，差異在輸入來源為單段語音/文字而非文件。語音輸入直接以音訊檔傳給支援多模態音訊輸入的 Gemini 模型（v1 定案，見 5.3a），不另外整合裝置端語音轉文字服務。輸出結構為單筆或少數幾筆 `Interaction` + 對 `Contact.nextContactReminder` 與 `importance` 的建議（而非直接寫入，仍需使用者確認）
 - **問答模式（5.5a）**：採「先查詢、後生成」二階段設計，避免把整個資料庫塞進單次 AI context。Cloud Function 內需要一個查詢規劃步驟（可用 Gemini function calling，讓模型決定要查哪些 Firestore 條件），查回相關聯絡人子集後再交給模型生成最終回答
 - **主動提醒模式（5.6）**：由 Firebase Scheduled Function（Cloud Scheduler 觸發，建議每日執行一次）掃描所有使用者的聯絡人資料：
