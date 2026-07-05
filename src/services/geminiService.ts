@@ -7,6 +7,8 @@ import type { TopicSuggestion } from '@domain/topicSuggestion';
 import { buildTopicSuggestionPrompt, parseTopicSuggestions } from '@domain/topicSuggestion';
 import type { BusinessCardFields } from '@domain/businessCard';
 import { BUSINESS_CARD_EXTRACTION_PROMPT, parseBusinessCardFields } from '@domain/businessCard';
+import type { DocumentTypeHint, ParsedDocumentContact } from '@domain/documentImport';
+import { parseDocumentContacts } from '@domain/documentImport';
 
 export class GeminiServiceError extends Error {}
 
@@ -49,4 +51,13 @@ export async function scanBusinessCard(base64Data: string, mimeType: string): Pr
     prompt: BUSINESS_CARD_EXTRACTION_PROMPT,
   });
   return parseBusinessCardFields(raw);
+}
+
+/** 文件通訊錄批次匯入解析（見 spec.md §5.7）：回傳解析出的聯絡人陣列供使用者預覽勾選，不寫入任何資料。 */
+export async function parseContactDocument(
+  base64Data: string,
+  docType: DocumentTypeHint
+): Promise<ParsedDocumentContact[]> {
+  const raw = await callGeminiProxy('parseContactDocument', { base64Data, docType });
+  return parseDocumentContacts(raw);
 }

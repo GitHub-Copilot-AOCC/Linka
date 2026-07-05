@@ -72,8 +72,18 @@ export function parseVCardFile(text: string): ParsedVCardContact[] {
   return contacts;
 }
 
-/** 依「姓名 + 電話或 Email」判斷是否已存在（見 spec.md §5.9 重複資料處理原則）。 */
-export function findDuplicateContact(existing: Contact[], candidate: ParsedVCardContact): Contact | undefined {
+/** 判斷重複資料所需的最小欄位形狀，供多種匯入來源（vCard、文件批次匯入等）共用。 */
+export interface DuplicateCandidateFields {
+  name: string;
+  phone?: string;
+  email?: string;
+}
+
+/**
+ * 依「姓名 + 電話或 Email」判斷是否已存在（見 spec.md §5.9、§5.7 共用的重複資料處理原則）。
+ * 為通用 domain helper，vCard 匯入與文件批次匯入皆可重用，不侷限於 ParsedVCardContact 型別。
+ */
+export function findDuplicateContact(existing: Contact[], candidate: DuplicateCandidateFields): Contact | undefined {
   return existing.find(
     (c) =>
       c.name.trim().toLowerCase() === candidate.name.trim().toLowerCase() &&
