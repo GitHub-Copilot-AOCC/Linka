@@ -4,6 +4,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // Use secrets for the API Key
 const GEMINI_API_KEY = defineSecret("GEMINI_API_KEY");
+const GEMINI_MODEL = "gemini-3.1-flash-lite";
 
 const cleanAndParseJson = (text: string) => {
     try {
@@ -51,7 +52,7 @@ export const geminiProxy = onRequest({
                 const { chatHistory, userInput, systemPrompt } = payload;
                 console.log("Generating networking advice...");
                 const model = genAI.getGenerativeModel({
-                    model: "gemini-2.0-flash-exp",
+                    model: GEMINI_MODEL,
                     systemInstruction: systemPrompt,
                     generationConfig: {
                         responseMimeType: "application/json"
@@ -72,7 +73,7 @@ export const geminiProxy = onRequest({
                 const { base64Data, mimeType, prompt } = payload;
                 console.log("Extracting contact from card...");
                 const model = genAI.getGenerativeModel({
-                    model: "gemini-2.0-flash-exp",
+                    model: GEMINI_MODEL,
                     generationConfig: {
                         responseMimeType: "application/json"
                     }
@@ -101,7 +102,7 @@ export const geminiProxy = onRequest({
                 const { prompt, systemInstruction } = payload;
                 console.log("Getting suggested topics...");
                 const model = genAI.getGenerativeModel({
-                    model: "gemini-2.0-flash-exp",
+                    model: GEMINI_MODEL,
                     systemInstruction: systemInstruction,
                     generationConfig: {
                         responseMimeType: "application/json"
@@ -118,7 +119,7 @@ export const geminiProxy = onRequest({
                 const { prompt, systemInstruction } = payload;
                 console.log("Getting profile summary...");
                 const model = genAI.getGenerativeModel({
-                    model: "gemini-2.0-flash-exp",
+                    model: GEMINI_MODEL,
                     systemInstruction: systemInstruction,
                     generationConfig: {
                         temperature: 0.5,
