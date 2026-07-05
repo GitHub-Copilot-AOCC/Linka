@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -11,11 +11,18 @@ import {
   Box,
   Typography,
   Chip,
+  Avatar,
+  IconButton,
+  CircularProgress,
 } from '@mui/material';
+import DeleteIcon from '@mui/icons-material/Delete';
+import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
 import { useContactsStore } from '@ui/store/contactsStore';
 import { useTagsStore } from '@ui/store/tagsStore';
-import { validateContact } from '@domain/contact';
-import type { Contact } from '@domain/contact';
+import { validateContact, MAX_PHOTOS_PER_CONTACT } from '@domain/contact';
+import type { Contact, ContactPhoto } from '@domain/contact';
+import { compressImage } from '@platform/imageCompression';
+import { uploadContactPhoto, removeContactPhoto } from '@data/contactsRepository';
 
 interface EditContactDialogProps {
   uid: string;
@@ -40,9 +47,37 @@ export function EditContactDialog({ uid, contact, open, onClose }: EditContactDi
   const [importance, setImportance] = useState<Contact['importance']>(contact.importance);
   const [tagIds, setTagIds] = useState<string[]>(contact.tags ?? []);
   const [error, setError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { tags, subscribe } = useTagsStore();
+  const contacts = useContactsStore((s) => s.contacts);
+  const livePhotos = contacts.find((c) => c.id === contact.id)?.photos ?? contact.photos ?? [];
 
   useEffect(() => subscribe(uid), [uid, subscribe]);
+
+  async function handlePhotoSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (livePhotos.length >= MAX_PHOTOS_PER_CONTACT) {
+      setError(`最多只能有 ${MAX_PHOTOS_PER_CONTACT} 張照片，請先移除一張`);
+      return;
+    }
+    setUploading(true);
+    setError(null);
+    try {
+      const compressed = await compressImage(file);
+      await uploadContactPhoto(uid, contact.id, compressed, livePhotos);
+    } catch (err) {
+      setError((err as Error).message || '上傳失敗');
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function handleRemovePhoto(photo: ContactPhoto) {
+    await removeContactPhoto(uid, contact.id, photo, livePhotos);
+  }
 
   function toggleTag(tagId: string) {
     setTagIds((ids) => (ids.includes(tagId) ? ids.filter((id) => id !== tagId) : [...ids, tagId]));
@@ -92,6 +127,34 @@ export function EditContactDialog({ uid, contact, open, onClose }: EditContactDi
             value={importance}
             onChange={(_, value) => setImportance((value ?? 1) as Contact['importance'])}
           />
+        </Box>
+
+        <Typography variant="body2" sx={{ mb: 1 }}>
+          照片（最多 {MAX_PHOTOS_PER_CONTACT} 張）
+        </Typography>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+          {livePhotos.map((photo) => (
+            <Box key={photo.addedAt} sx={{ position: 'relative' }}>
+              <Avatar src={photo.url} variant="rounded" sx={{ width: 64, height: 64 }} />
+              <IconButton
+                size="small"
+                onClick={() => handleRemovePhoto(photo)}
+                sx={{ position: 'absolute', top: -8, right: -8, bgcolor: 'background.paper' }}
+              >
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+            </Box>
+          ))}
+          {livePhotos.length < MAX_PHOTOS_PER_CONTACT && (
+            <IconButton
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              sx={{ width: 64, height: 64, border: '1px dashed', borderColor: 'divider' }}
+            >
+              {uploading ? <CircularProgress size={20} /> : <AddPhotoAlternateIcon />}
+            </IconButton>
+          )}
+          <input ref={fileInputRef} type="file" accept="image/*" hidden onChange={handlePhotoSelected} />
         </Box>
 
         <TextField label="姓名" fullWidth margin="dense" {...field('name')} />

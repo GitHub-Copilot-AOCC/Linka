@@ -10,8 +10,9 @@ import {
   orderBy,
   Timestamp,
 } from 'firebase/firestore';
-import { db } from './firebase';
-import type { Contact, NewContactInput } from '@domain/contact';
+import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { db, storage } from './firebase';
+import type { Contact, ContactPhoto, NewContactInput } from '@domain/contact';
 import { applyContactDefaults } from '@domain/contact';
 
 // Firestore 路徑：users/{uid}/contacts/{contactId}（見 spec.md §7）
@@ -80,4 +81,45 @@ export async function updateContact(
 export async function deleteContact(uid: string, contactId: string): Promise<void> {
   if (!db) throw new Error('Firestore is not configured');
   await deleteDoc(doc(db, 'users', uid, 'contacts', contactId));
+}
+
+/**
+ * 上傳聯絡人照片到 Firebase Storage（見 spec.md §5.2、§7：路徑
+ * users/{uid}/contacts/{contactId}/photos/{photoId}.jpg），並把下載 URL 加進
+ * Contact.photos 陣列。呼叫端負責先做 MAX_PHOTOS_PER_CONTACT 上限檢查。
+ */
+export async function uploadContactPhoto(
+  uid: string,
+  contactId: string,
+  blob: Blob,
+  existingPhotos: ContactPhoto[]
+): Promise<void> {
+  if (!storage) throw new Error('Firebase Storage is not configured');
+  const photoId = `${Date.now()}`;
+  const path = `users/${uid}/contacts/${contactId}/photos/${photoId}.jpg`;
+  const fileRef = storageRef(storage, path);
+  await uploadBytes(fileRef, blob, { contentType: 'image/jpeg' });
+  const url = await getDownloadURL(fileRef);
+
+  const photo: ContactPhoto = { url, source: 'upload', addedAt: Date.now() };
+  await updateContact(uid, contactId, { photos: [...existingPhotos, photo] });
+}
+
+/** 刪除一張已上傳的聯絡人照片（Storage 檔案 + Firestore 陣列項目）。 */
+export async function removeContactPhoto(
+  uid: string,
+  contactId: string,
+  photo: ContactPhoto,
+  existingPhotos: ContactPhoto[]
+): Promise<void> {
+  if (storage) {
+    try {
+      await deleteObject(storageRef(storage, photo.url));
+    } catch {
+      // 用 download URL 建立 ref 在某些情況下無法直接刪除底層檔案，
+      // 此時僅移除 Firestore 紀錄，不視為致命錯誤（避免留下孤兒檔案但擋住使用者操作）。
+    }
+  }
+  const remaining = existingPhotos.filter((p) => p.addedAt !== photo.addedAt);
+  await updateContact(uid, contactId, { photos: remaining.length > 0 ? remaining : undefined });
 }

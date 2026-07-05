@@ -144,7 +144,7 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
         {visibleContacts.map((contact) => (
           <Card key={contact.id} variant="elevation" elevation={1}>
             <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Avatar>{contact.name.charAt(0)}</Avatar>
+              <Avatar src={contact.photos?.[0]?.url}>{contact.name.charAt(0)}</Avatar>
               <Box sx={{ flex: 1 }}>
                 <Typography variant="subtitle1">{contact.name}</Typography>
                 <Typography variant="body2" color="text.secondary">
