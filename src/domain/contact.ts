@@ -66,13 +66,22 @@ export function validateContact(input: NewContactInput): ValidationResult {
   return { valid: Object.keys(errors).length === 0, errors };
 }
 
+/** 移除值為 undefined 的欄位，Firestore 的 addDoc/setDoc 遇到 undefined 欄位值會直接拋錯。 */
+function omitUndefined<T extends Record<string, unknown>>(obj: T): T {
+  const result = {} as T;
+  for (const key of Object.keys(obj) as Array<keyof T>) {
+    if (obj[key] !== undefined) result[key] = obj[key];
+  }
+  return result;
+}
+
 /** 建立新聯絡人時套用預設值（星級預設 3，見 spec.md §5.2）。 */
 export function applyContactDefaults(input: NewContactInput): Omit<Contact, 'id'> {
   const now = Date.now();
-  return {
+  return omitUndefined({
     ...input,
     importance: input.importance ?? DEFAULT_IMPORTANCE,
     createdAt: now,
     updatedAt: now,
-  };
+  });
 }

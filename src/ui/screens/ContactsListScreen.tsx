@@ -14,11 +14,14 @@ import {
   TextField,
   Button,
   Alert,
+  IconButton,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import StarIcon from '@mui/icons-material/Star';
+import HistoryIcon from '@mui/icons-material/History';
 import { useContactsStore } from '@ui/store/contactsStore';
 import type { NewContactInput } from '@domain/contact';
+import { ContactInteractionsDialog } from '@ui/components/ContactInteractionsDialog';
 
 interface ContactsListScreenProps {
   uid: string;
@@ -31,6 +34,7 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
   const [name, setName] = useState('');
   const [company, setCompany] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
+  const [activeContactId, setActiveContactId] = useState<string | null>(null);
 
   useEffect(() => {
     const unsubscribe = subscribe(uid);
@@ -75,10 +79,23 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
                 <StarIcon fontSize="small" color={contact.importance >= 4 ? 'warning' : 'disabled'} />
                 <Typography variant="body2">{contact.importance}</Typography>
               </Box>
+              <IconButton aria-label="互動紀錄" onClick={() => setActiveContactId(contact.id)}>
+                <HistoryIcon fontSize="small" />
+              </IconButton>
             </CardContent>
           </Card>
         ))}
       </Stack>
+
+      {activeContactId && (
+        <ContactInteractionsDialog
+          uid={uid}
+          contactId={activeContactId}
+          contactName={contacts.find((c) => c.id === activeContactId)?.name ?? ''}
+          open
+          onClose={() => setActiveContactId(null)}
+        />
+      )}
 
       <Fab
         color="primary"
