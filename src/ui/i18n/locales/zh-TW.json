@@ -1,0 +1,117 @@
+{
+  "common": {
+    "cancel": "取消",
+    "save": "儲存",
+    "delete": "刪除",
+    "close": "關閉",
+    "add": "新增"
+  },
+  "firebaseNotConfigured": {
+    "title": "Firebase 未設定",
+    "message": "請在 .env 設定 VITE_FIREBASE_* 環境變數後重新啟動 dev server。"
+  },
+  "auth": {
+    "loginTitle": "登入 Linka",
+    "registerTitle": "註冊 Linka",
+    "email": "Email",
+    "password": "密碼",
+    "passwordHint": "密碼（至少 8 個字元）",
+    "loginButton": "登入",
+    "registerButton": "註冊",
+    "forgotPassword": "忘記密碼？",
+    "enterEmailFirst": "請先輸入 Email",
+    "resetSent": "重設密碼信已寄出，請查看信箱",
+    "or": "或",
+    "googleLogin": "用 Google 登入",
+    "noAccount": "還沒有帳號？",
+    "hasAccount": "已經有帳號？",
+    "registerLink": "註冊",
+    "loginLink": "登入"
+  },
+  "nav": {
+    "appName": "Linka",
+    "home": "首頁",
+    "contacts": "聯絡人",
+    "settings": "設定"
+  },
+  "dashboard": {
+    "title": "首頁",
+    "noReminders": "今天沒有需要處理的提醒。"
+  },
+  "reminders": {
+    "title": "今天該聯絡的人",
+    "dateLabel": "提醒日期：{{date}}",
+    "markDone": "標記完成"
+  },
+  "contacts": {
+    "title": "聯絡人",
+    "searchPlaceholder": "搜尋姓名/公司/職稱",
+    "sortByName": "依姓名",
+    "sortByImportance": "依星級",
+    "tagsManager": "標籤管理",
+    "empty": "還沒有聯絡人，點右下角按鈕新增第一位。",
+    "noResults": "找不到符合「{{keyword}}」的聯絡人。",
+    "setReminder": "設定提醒",
+    "interactions": "互動紀錄",
+    "moreActions": "更多操作",
+    "edit": "編輯",
+    "addContact": "新增聯絡人",
+    "name": "姓名",
+    "company": "公司"
+  },
+  "editContact": {
+    "title": "編輯 {{name}}",
+    "importance": "重要性星級",
+    "photos": "照片（最多 {{max}} 張）",
+    "role": "職稱",
+    "phone": "電話",
+    "birthday": "生日",
+    "linkedin": "LinkedIn",
+    "notes": "備註",
+    "tags": "標籤",
+    "maxPhotosError": "最多只能有 {{max}} 張照片，請先移除一張"
+  },
+  "deleteContact": {
+    "title": "刪除聯絡人？",
+    "confirm": "確定要刪除「{{name}}」嗎？此操作無法復原（互動紀錄不會自動刪除）。"
+  },
+  "setReminder": {
+    "title": "{{name}} 的下次聯絡提醒",
+    "dateLabel": "提醒日期",
+    "clear": "清除提醒"
+  },
+  "interactionsDialog": {
+    "title": "{{name}} 的互動紀錄",
+    "type": "類型",
+    "typeMeeting": "會議",
+    "typeCall": "通話",
+    "typeEmail": "Email",
+    "description": "描述",
+    "date": "日期",
+    "addInteraction": "新增互動",
+    "empty": "還沒有互動紀錄"
+  },
+  "tags": {
+    "title": "標籤管理",
+    "newTagLabel": "新標籤名稱"
+  },
+  "operationLog": {
+    "title": "操作歷史",
+    "empty": "還沒有任何操作紀錄。"
+  },
+  "settings": {
+    "title": "設定",
+    "account": "帳號",
+    "syncStatus": "同步狀態",
+    "operationLog": "操作歷史",
+    "view": "查看",
+    "logout": "登出",
+    "language": "語言"
+  },
+  "syncStatus": {
+    "offline": "離線中",
+    "syncing": "同步中",
+    "synced": "已同步",
+    "offlineTooltip": "無網路連線，資料會在恢復連線後自動同步"
+  }
+}

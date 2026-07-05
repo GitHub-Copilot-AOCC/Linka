@@ -17,6 +17,7 @@ import {
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
+import { useTranslation } from 'react-i18next';
 import { useContactsStore } from '@ui/store/contactsStore';
 import { useTagsStore } from '@ui/store/tagsStore';
 import { validateContact, MAX_PHOTOS_PER_CONTACT } from '@domain/contact';
@@ -34,6 +35,7 @@ interface EditContactDialogProps {
 /** 編輯聯絡人完整欄位（見 spec.md §5.2）：職稱、公司、電話、Email、生日、社交連結、備註、星級。 */
 export function EditContactDialog({ uid, contact, open, onClose }: EditContactDialogProps) {
   const { update } = useContactsStore();
+  const { t } = useTranslation();
   const [form, setForm] = useState({
     name: contact.name,
     role: contact.role ?? '',
@@ -60,7 +62,7 @@ export function EditContactDialog({ uid, contact, open, onClose }: EditContactDi
     e.target.value = '';
     if (!file) return;
     if (livePhotos.length >= MAX_PHOTOS_PER_CONTACT) {
-      setError(`最多只能有 ${MAX_PHOTOS_PER_CONTACT} 張照片，請先移除一張`);
+      setError(t('editContact.maxPhotosError', { max: MAX_PHOTOS_PER_CONTACT }));
       return;
     }
     setUploading(true);
@@ -69,7 +71,7 @@ export function EditContactDialog({ uid, contact, open, onClose }: EditContactDi
       const compressed = await compressImage(file);
       await uploadContactPhoto(uid, contact.id, compressed, livePhotos);
     } catch (err) {
-      setError((err as Error).message || '上傳失敗');
+      setError((err as Error).message);
     } finally {
       setUploading(false);
     }
@@ -106,7 +108,7 @@ export function EditContactDialog({ uid, contact, open, onClose }: EditContactDi
 
     const result = validateContact({ ...patch, name: patch.name });
     if (!result.valid) {
-      setError(Object.values(result.errors)[0] ?? '儲存失敗');
+      setError(Object.values(result.errors)[0] ?? t('common.save'));
       return;
     }
 
@@ -117,12 +119,12 @@ export function EditContactDialog({ uid, contact, open, onClose }: EditContactDi
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>編輯 {contact.name}</DialogTitle>
+      <DialogTitle>{t('editContact.title', { name: contact.name })}</DialogTitle>
       <DialogContent>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-          <Typography variant="body2">重要性星級</Typography>
+          <Typography variant="body2">{t('editContact.importance')}</Typography>
           <Rating
             value={importance}
             onChange={(_, value) => setImportance((value ?? 1) as Contact['importance'])}
@@ -130,7 +132,7 @@ export function EditContactDialog({ uid, contact, open, onClose }: EditContactDi
         </Box>
 
         <Typography variant="body2" sx={{ mb: 1 }}>
-          照片（最多 {MAX_PHOTOS_PER_CONTACT} 張）
+          {t('editContact.photos', { max: MAX_PHOTOS_PER_CONTACT })}
         </Typography>
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
           {livePhotos.map((photo) => (
@@ -157,24 +159,24 @@ export function EditContactDialog({ uid, contact, open, onClose }: EditContactDi
           <input ref={fileInputRef} type="file" accept="image/*" hidden onChange={handlePhotoSelected} />
         </Box>
 
-        <TextField label="姓名" fullWidth margin="dense" {...field('name')} />
-        <TextField label="職稱" fullWidth margin="dense" {...field('role')} />
-        <TextField label="公司" fullWidth margin="dense" {...field('company')} />
-        <TextField label="電話" fullWidth margin="dense" {...field('phone')} />
-        <TextField label="Email" fullWidth margin="dense" {...field('email')} />
+        <TextField label={t('contacts.name')} fullWidth margin="dense" {...field('name')} />
+        <TextField label={t('editContact.role')} fullWidth margin="dense" {...field('role')} />
+        <TextField label={t('contacts.company')} fullWidth margin="dense" {...field('company')} />
+        <TextField label={t('editContact.phone')} fullWidth margin="dense" {...field('phone')} />
+        <TextField label={t('auth.email')} fullWidth margin="dense" {...field('email')} />
         <TextField
-          label="生日"
+          label={t('editContact.birthday')}
           type="date"
           fullWidth
           margin="dense"
           {...field('birthday')}
           slotProps={{ inputLabel: { shrink: true } }}
         />
-        <TextField label="LinkedIn" fullWidth margin="dense" {...field('linkedin')} />
-        <TextField label="備註" fullWidth margin="dense" multiline rows={2} {...field('notes')} />
+        <TextField label={t('editContact.linkedin')} fullWidth margin="dense" {...field('linkedin')} />
+        <TextField label={t('editContact.notes')} fullWidth margin="dense" multiline rows={2} {...field('notes')} />
 
         <Typography variant="body2" sx={{ mt: 2, mb: 1 }}>
-          標籤
+          {t('editContact.tags')}
         </Typography>
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
           {tags.map((tag) => (
@@ -189,9 +191,9 @@ export function EditContactDialog({ uid, contact, open, onClose }: EditContactDi
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>取消</Button>
+        <Button onClick={onClose}>{t('common.cancel')}</Button>
         <Button onClick={handleSave} variant="contained">
-          儲存
+          {t('common.save')}
         </Button>
       </DialogActions>
     </Dialog>

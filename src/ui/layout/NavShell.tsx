@@ -17,13 +17,8 @@ import HomeIcon from '@mui/icons-material/Home';
 import PeopleIcon from '@mui/icons-material/People';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { SyncStatusChip } from '@ui/components/SyncStatusChip';
-
-const DESTINATIONS = [
-  { path: '/', label: '首頁', icon: <HomeIcon /> },
-  { path: '/contacts', label: '聯絡人', icon: <PeopleIcon /> },
-  { path: '/settings', label: '設定', icon: <SettingsIcon /> },
-];
 
 const RAIL_WIDTH = 88;
 
@@ -36,6 +31,13 @@ export function NavShell({ children }: { children: React.ReactNode }) {
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
   const location = useLocation();
   const navigate = useNavigate();
+  const { t } = useTranslation();
+
+  const DESTINATIONS = [
+    { path: '/', label: t('nav.home'), icon: <HomeIcon /> },
+    { path: '/contacts', label: t('nav.contacts'), icon: <PeopleIcon /> },
+    { path: '/settings', label: t('nav.settings'), icon: <SettingsIcon /> },
+  ];
 
   const activeIndex = Math.max(
     0,
@@ -69,7 +71,7 @@ export function NavShell({ children }: { children: React.ReactNode }) {
       <Box sx={{ flexGrow: 1 }}>
         <AppBar position="static" color="default" elevation={1}>
           <Toolbar sx={{ justifyContent: 'space-between' }}>
-            <Typography variant="h6">Linka</Typography>
+            <Typography variant="h6">{t('nav.appName')}</Typography>
             <SyncStatusChip />
           </Toolbar>
         </AppBar>

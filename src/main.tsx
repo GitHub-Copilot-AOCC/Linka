@@ -2,6 +2,8 @@ import { StrictMode, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ThemeProvider, CssBaseline, Box, Typography } from '@mui/material';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import '@ui/i18n';
 import { theme } from '@ui/theme/theme';
 import { DashboardScreen } from '@ui/screens/DashboardScreen';
 import { ContactsListScreen } from '@ui/screens/ContactsListScreen';
@@ -26,6 +28,7 @@ const ROUTER_BASENAME = '/index-new.html';
 // v1 重寫的新進入點。帳號系統見 spec.md §5.1：Email/密碼 + Google OAuth，取代先前開發階段的匿名登入暫時做法。
 function App() {
   const init = useAuthStore((s) => s.init);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const unsubscribe = init();
@@ -35,10 +38,8 @@ function App() {
   if (!isFirebaseConfigured) {
     return (
       <Box sx={{ p: 4 }}>
-        <Typography variant="h6">Firebase 未設定</Typography>
-        <Typography color="text.secondary">
-          請在 .env 設定 VITE_FIREBASE_* 環境變數後重新啟動 dev server。
-        </Typography>
+        <Typography variant="h6">{t('firebaseNotConfigured.title')}</Typography>
+        <Typography color="text.secondary">{t('firebaseNotConfigured.message')}</Typography>
       </Box>
     );
   }

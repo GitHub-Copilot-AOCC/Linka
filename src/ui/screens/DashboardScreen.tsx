@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Box, Typography } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@ui/store/authStore';
 import { useContactsStore } from '@ui/store/contactsStore';
 import { RemindersPanel } from '@ui/components/RemindersPanel';
@@ -10,6 +11,7 @@ import { todayDateString } from '@domain/interaction';
 export function DashboardScreen() {
   const { user } = useAuthStore();
   const { contacts, subscribe } = useContactsStore();
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (!user) return;
@@ -24,12 +26,12 @@ export function DashboardScreen() {
   return (
     <Box sx={{ pb: 10 }}>
       <Typography variant="h5" sx={{ p: 2, pb: 0 }}>
-        首頁
+        {t('dashboard.title')}
       </Typography>
       <RemindersPanel uid={user.uid} />
       {!hasDue && (
         <Typography color="text.secondary" sx={{ p: 2 }}>
-          今天沒有需要處理的提醒。
+          {t('dashboard.noReminders')}
         </Typography>
       )}
     </Box>

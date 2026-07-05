@@ -10,6 +10,7 @@ import {
   Stack,
   Alert,
 } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import { useTagsStore } from '@ui/store/tagsStore';
 
 interface TagsManagerDialogProps {
@@ -21,6 +22,7 @@ interface TagsManagerDialogProps {
 /** 標籤管理（見 spec.md §5.2）：預設分類 + 使用者自訂標籤的新增/刪除。 */
 export function TagsManagerDialog({ uid, open, onClose }: TagsManagerDialogProps) {
   const { tags, subscribe, add, remove } = useTagsStore();
+  const { t } = useTranslation();
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -35,19 +37,25 @@ export function TagsManagerDialog({ uid, open, onClose }: TagsManagerDialogProps
       setName('');
       setError(null);
     } else {
-      setError(result.error ?? '新增失敗');
+      setError(result.error ?? t('common.add'));
     }
   }
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
-      <DialogTitle>標籤管理</DialogTitle>
+      <DialogTitle>{t('tags.title')}</DialogTitle>
       <DialogContent>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
-          <TextField size="small" label="新標籤名稱" value={name} onChange={(e) => setName(e.target.value)} fullWidth />
+          <TextField
+            size="small"
+            label={t('tags.newTagLabel')}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            fullWidth
+          />
           <Button variant="contained" onClick={handleAdd}>
-            新增
+            {t('common.add')}
           </Button>
         </Stack>
         <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
@@ -57,7 +65,7 @@ export function TagsManagerDialog({ uid, open, onClose }: TagsManagerDialogProps
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>關閉</Button>
+        <Button onClick={onClose}>{t('common.close')}</Button>
       </DialogActions>
     </Dialog>
   );

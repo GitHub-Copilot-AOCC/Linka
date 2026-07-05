@@ -16,6 +16,7 @@ import {
   Alert,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
+import { useTranslation } from 'react-i18next';
 import { useInteractionsStore } from '@ui/store/interactionsStore';
 import { todayDateString } from '@domain/interaction';
 import type { InteractionType } from '@domain/interaction';
@@ -28,20 +29,21 @@ interface ContactInteractionsDialogProps {
   onClose: () => void;
 }
 
-const TYPE_LABEL: Record<InteractionType, string> = {
-  meeting: '會議',
-  call: '通話',
-  email: 'Email',
-};
-
 /** 互動紀錄對話框（見 spec.md §5.3）：顯示歷史 + 新增表單，日期預設今天、無獨立標題欄位。 */
 export function ContactInteractionsDialog({ uid, contactId, contactName, open, onClose }: ContactInteractionsDialogProps) {
   const { byContactId, subscribe, add, remove } = useInteractionsStore();
+  const { t } = useTranslation();
   const interactions = byContactId[contactId] ?? [];
   const [type, setType] = useState<InteractionType>('meeting');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(todayDateString());
   const [error, setError] = useState<string | null>(null);
+
+  const TYPE_LABEL: Record<InteractionType, string> = {
+    meeting: t('interactionsDialog.typeMeeting'),
+    call: t('interactionsDialog.typeCall'),
+    email: t('interactionsDialog.typeEmail'),
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -56,19 +58,19 @@ export function ContactInteractionsDialog({ uid, contactId, contactName, open, o
       setDate(todayDateString());
       setError(null);
     } else {
-      setError(Object.values(result.errors ?? {})[0] ?? '新增失敗');
+      setError(Object.values(result.errors ?? {})[0] ?? t('interactionsDialog.addInteraction'));
     }
   }
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>{contactName} 的互動紀錄</DialogTitle>
+      <DialogTitle>{t('interactionsDialog.title', { name: contactName })}</DialogTitle>
       <DialogContent>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
         <TextField
           select
-          label="類型"
+          label={t('interactionsDialog.type')}
           fullWidth
           margin="dense"
           value={type}
@@ -81,7 +83,7 @@ export function ContactInteractionsDialog({ uid, contactId, contactName, open, o
           ))}
         </TextField>
         <TextField
-          label="描述"
+          label={t('interactionsDialog.description')}
           fullWidth
           margin="dense"
           multiline
@@ -90,7 +92,7 @@ export function ContactInteractionsDialog({ uid, contactId, contactName, open, o
           onChange={(e) => setDescription(e.target.value)}
         />
         <TextField
-          label="日期"
+          label={t('interactionsDialog.date')}
           type="date"
           fullWidth
           margin="dense"
@@ -99,13 +101,13 @@ export function ContactInteractionsDialog({ uid, contactId, contactName, open, o
           slotProps={{ inputLabel: { shrink: true } }}
         />
         <Button variant="contained" onClick={handleAdd} sx={{ mt: 1 }}>
-          新增互動
+          {t('interactionsDialog.addInteraction')}
         </Button>
 
         <Divider sx={{ my: 2 }} />
 
         {interactions.length === 0 ? (
-          <Typography color="text.secondary">還沒有互動紀錄</Typography>
+          <Typography color="text.secondary">{t('interactionsDialog.empty')}</Typography>
         ) : (
           <List dense>
             {interactions.map((interaction) => (
@@ -127,7 +129,7 @@ export function ContactInteractionsDialog({ uid, contactId, contactName, open, o
         )}
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>關閉</Button>
+        <Button onClick={onClose}>{t('common.close')}</Button>
       </DialogActions>
     </Dialog>
   );
