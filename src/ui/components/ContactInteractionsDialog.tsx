@@ -50,7 +50,7 @@ export function ContactInteractionsDialog({ uid, contactId, contactName, open, o
   }, [open, uid, contactId, subscribe]);
 
   async function handleAdd() {
-    const result = await add(uid, { contactIds: [contactId], type, description, date });
+    const result = await add(uid, { contactIds: [contactId], type, description, date }, contactName);
     if (result.ok) {
       setDescription('');
       setDate(todayDateString());

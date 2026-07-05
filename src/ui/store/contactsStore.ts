@@ -7,6 +7,7 @@ import {
   updateContact,
   deleteContact,
 } from '@data/contactsRepository';
+import { createLogEntry } from '@data/logsRepository';
 
 interface ContactsState {
   contacts: Contact[];
@@ -18,7 +19,7 @@ interface ContactsState {
   remove: (uid: string, contactId: string) => Promise<void>;
 }
 
-export const useContactsStore = create<ContactsState>((set) => ({
+export const useContactsStore = create<ContactsState>((set, get) => ({
   contacts: [],
   loading: false,
   error: null,
@@ -35,6 +36,12 @@ export const useContactsStore = create<ContactsState>((set) => ({
     }
     try {
       await createContact(uid, input);
+      createLogEntry(uid, {
+        action: '新增聯絡人',
+        contactName: input.name,
+        type: 'create',
+        details: input.name,
+      }).catch((err) => console.error('createLogEntry failed:', err));
       return { ok: true };
     } catch (err) {
       set({ error: (err as Error).message });
@@ -44,9 +51,23 @@ export const useContactsStore = create<ContactsState>((set) => ({
 
   update: async (uid, contactId, patch) => {
     await updateContact(uid, contactId, patch);
+    const contactName = get().contacts.find((c) => c.id === contactId)?.name ?? '';
+    createLogEntry(uid, {
+      action: '更新聯絡人',
+      contactName,
+      type: 'update',
+      details: Object.keys(patch).join(', '),
+    }).catch((err) => console.error('createLogEntry failed:', err));
   },
 
   remove: async (uid, contactId) => {
+    const contactName = get().contacts.find((c) => c.id === contactId)?.name ?? '';
     await deleteContact(uid, contactId);
+    createLogEntry(uid, {
+      action: '刪除聯絡人',
+      contactName,
+      type: 'delete',
+      details: contactName,
+    }).catch((err) => console.error('createLogEntry failed:', err));
   },
 }));
