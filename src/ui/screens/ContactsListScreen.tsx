@@ -17,14 +17,18 @@ import {
   IconButton,
   Menu,
   MenuItem,
+  ToggleButton,
+  ToggleButtonGroup,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import StarIcon from '@mui/icons-material/Star';
 import HistoryIcon from '@mui/icons-material/History';
 import AlarmIcon from '@mui/icons-material/Alarm';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import SearchIcon from '@mui/icons-material/Search';
 import { useContactsStore } from '@ui/store/contactsStore';
-import type { NewContactInput } from '@domain/contact';
+import type { NewContactInput, ContactSortBy } from '@domain/contact';
+import { filterContactsByKeyword, sortContacts } from '@domain/contact';
 import { ContactInteractionsDialog } from '@ui/components/ContactInteractionsDialog';
 import { SetReminderDialog } from '@ui/components/SetReminderDialog';
 import { EditContactDialog } from '@ui/components/EditContactDialog';
@@ -47,11 +51,15 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
   const [deleteContactId, setDeleteContactId] = useState<string | null>(null);
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
   const [menuContactId, setMenuContactId] = useState<string | null>(null);
+  const [keyword, setKeyword] = useState('');
+  const [sortBy, setSortBy] = useState<ContactSortBy>('name');
 
   useEffect(() => {
     const unsubscribe = subscribe(uid);
     return unsubscribe;
   }, [uid, subscribe]);
+
+  const visibleContacts = sortContacts(filterContactsByKeyword(contacts, keyword), sortBy);
 
   async function handleSubmit() {
     const input: NewContactInput = { name, company: company || undefined };
@@ -72,12 +80,38 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
         聯絡人
       </Typography>
 
+      {contacts.length > 0 && (
+        <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
+          <TextField
+            size="small"
+            placeholder="搜尋姓名/公司/職稱"
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+            slotProps={{ input: { startAdornment: <SearchIcon fontSize="small" sx={{ mr: 1 }} /> } }}
+            sx={{ flex: 1, minWidth: 200 }}
+          />
+          <ToggleButtonGroup
+            size="small"
+            exclusive
+            value={sortBy}
+            onChange={(_, value) => value && setSortBy(value)}
+          >
+            <ToggleButton value="name">依姓名</ToggleButton>
+            <ToggleButton value="importance">依星級</ToggleButton>
+          </ToggleButtonGroup>
+        </Box>
+      )}
+
       {contacts.length === 0 && (
         <Typography color="text.secondary">還沒有聯絡人，點右下角按鈕新增第一位。</Typography>
       )}
 
+      {contacts.length > 0 && visibleContacts.length === 0 && (
+        <Typography color="text.secondary">找不到符合「{keyword}」的聯絡人。</Typography>
+      )}
+
       <Stack spacing={1.5}>
-        {contacts.map((contact) => (
+        {visibleContacts.map((contact) => (
           <Card key={contact.id} variant="elevation" elevation={1}>
             <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <Avatar>{contact.name.charAt(0)}</Avatar>

@@ -95,3 +95,22 @@ export function isReminderDue(contact: Contact, todayDateString: string): boolea
 export function sortByReminderDate(contacts: Contact[]): Contact[] {
   return [...contacts].sort((a, b) => (a.nextContactReminder ?? '').localeCompare(b.nextContactReminder ?? ''));
 }
+
+/** 關鍵字搜尋（見 spec.md §5.2：姓名/公司/職稱），不分大小寫、忽略前後空白。 */
+export function filterContactsByKeyword(contacts: Contact[], keyword: string): Contact[] {
+  const trimmed = keyword.trim().toLowerCase();
+  if (!trimmed) return contacts;
+  return contacts.filter((c) =>
+    [c.name, c.company, c.role].some((field) => field?.toLowerCase().includes(trimmed))
+  );
+}
+
+export type ContactSortBy = 'name' | 'importance';
+
+/** 列表排序：依姓名字母（預設）或依星級（高到低）。見 spec.md §5.2。 */
+export function sortContacts(contacts: Contact[], sortBy: ContactSortBy): Contact[] {
+  if (sortBy === 'importance') {
+    return [...contacts].sort((a, b) => b.importance - a.importance || a.name.localeCompare(b.name));
+  }
+  return [...contacts].sort((a, b) => a.name.localeCompare(b.name));
+}
