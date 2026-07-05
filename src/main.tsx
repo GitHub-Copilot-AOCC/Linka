@@ -1,29 +1,27 @@
-import { StrictMode, useEffect, useState } from 'react';
+import { StrictMode, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
-import { ThemeProvider, CssBaseline, Box, Typography, CircularProgress } from '@mui/material';
-import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+import { ThemeProvider, CssBaseline, Box, Typography } from '@mui/material';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { theme } from '@ui/theme/theme';
-import { ContactsListScreen } from '@ui/screens/ContactsListScreen';
-import { auth, isFirebaseConfigured } from '@data/firebase';
+import { HomeScreen } from '@ui/screens/HomeScreen';
+import { LoginScreen } from '@ui/screens/LoginScreen';
+import { RegisterScreen } from '@ui/screens/RegisterScreen';
+import { ProtectedRoute } from '@ui/routes/ProtectedRoute';
+import { useAuthStore } from '@ui/store/authStore';
+import { isFirebaseConfigured } from '@data/firebase';
 
-// v1 重寫的新進入點（與舊版 index.tsx/App.tsx 並存，見 CLAUDE.md §1）。
-// 目前僅接上 §5.2 聯絡人 CRUD 這一片垂直切片，供功能驗證；帳號系統（§5.1）尚未實作，
-// 這裡先用匿名登入取得 uid，僅供開發階段預覽，之後會被真正的登入畫面取代。
+// 開發階段暫時用 index-new.html 作為獨立進入點（與舊版並存，見 CLAUDE.md §1）；
+// Router 用 basename 對應到這個路徑，之後正式取代舊版 index.html 時把 basename 移除即可。
+const ROUTER_BASENAME = '/index-new.html';
+
+// v1 重寫的新進入點。帳號系統見 spec.md §5.1：Email/密碼 + Google OAuth，取代先前開發階段的匿名登入暫時做法。
 function App() {
-  const [uid, setUid] = useState<string | null>(null);
-  const [authError, setAuthError] = useState<string | null>(null);
+  const init = useAuthStore((s) => s.init);
 
   useEffect(() => {
-    if (!isFirebaseConfigured || !auth) return;
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setUid(user.uid);
-      } else {
-        signInAnonymously(auth).catch((err) => setAuthError(err.message));
-      }
-    });
+    const unsubscribe = init();
     return unsubscribe;
-  }, []);
+  }, [init]);
 
   if (!isFirebaseConfigured) {
     return (
@@ -36,23 +34,22 @@ function App() {
     );
   }
 
-  if (authError) {
-    return (
-      <Box sx={{ p: 4 }}>
-        <Typography color="error">登入失敗：{authError}</Typography>
-      </Box>
-    );
-  }
-
-  if (!uid) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  return <ContactsListScreen uid={uid} />;
+  return (
+    <BrowserRouter basename={ROUTER_BASENAME}>
+      <Routes>
+        <Route path="/login" element={<LoginScreen />} />
+        <Route path="/register" element={<RegisterScreen />} />
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <HomeScreen />
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
+    </BrowserRouter>
+  );
 }
 
 createRoot(document.getElementById('root')!).render(

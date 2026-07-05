@@ -66,13 +66,57 @@ export function validateContact(input: NewContactInput): ValidationResult {
   return { valid: Object.keys(errors).length === 0, errors };
 }
 
+/** 移除值為 undefined 的欄位，Firestore 的 addDoc/setDoc 遇到 undefined 欄位值會直接拋錯。 */
+function omitUndefined<T extends Record<string, unknown>>(obj: T): T {
+  const result = {} as T;
+  for (const key of Object.keys(obj) as Array<keyof T>) {
+    if (obj[key] !== undefined) result[key] = obj[key];
+  }
+  return result;
+}
+
 /** 建立新聯絡人時套用預設值（星級預設 3，見 spec.md §5.2）。 */
 export function applyContactDefaults(input: NewContactInput): Omit<Contact, 'id'> {
   const now = Date.now();
-  return {
+  return omitUndefined({
     ...input,
     importance: input.importance ?? DEFAULT_IMPORTANCE,
     createdAt: now,
     updatedAt: now,
-  };
+  });
+}
+
+/** 待處理提醒：nextContactReminder 已設定且不晚於今天（見 spec.md §5.4）。 */
+export function isReminderDue(contact: Contact, todayDateString: string): boolean {
+  return Boolean(contact.nextContactReminder) && contact.nextContactReminder! <= todayDateString;
+}
+
+/** 依提醒日期排序（早到晚），供首頁待辦清單使用。 */
+export function sortByReminderDate(contacts: Contact[]): Contact[] {
+  return [...contacts].sort((a, b) => (a.nextContactReminder ?? '').localeCompare(b.nextContactReminder ?? ''));
+}
+
+/** 關鍵字搜尋（見 spec.md §5.2：姓名/公司/職稱），不分大小寫、忽略前後空白。 */
+export function filterContactsByKeyword(contacts: Contact[], keyword: string): Contact[] {
+  const trimmed = keyword.trim().toLowerCase();
+  if (!trimmed) return contacts;
+  return contacts.filter((c) =>
+    [c.name, c.company, c.role].some((field) => field?.toLowerCase().includes(trimmed))
+  );
+}
+
+/** 依社交圈標籤篩選（見 spec.md §5.2）。tagId 為 null/undefined 時不篩選。 */
+export function filterContactsByTag(contacts: Contact[], tagId: string | null): Contact[] {
+  if (!tagId) return contacts;
+  return contacts.filter((c) => c.tags?.includes(tagId));
+}
+
+export type ContactSortBy = 'name' | 'importance';
+
+/** 列表排序：依姓名字母（預設）或依星級（高到低）。見 spec.md §5.2。 */
+export function sortContacts(contacts: Contact[], sortBy: ContactSortBy): Contact[] {
+  if (sortBy === 'importance') {
+    return [...contacts].sort((a, b) => b.importance - a.importance || a.name.localeCompare(b.name));
+  }
+  return [...contacts].sort((a, b) => a.name.localeCompare(b.name));
 }

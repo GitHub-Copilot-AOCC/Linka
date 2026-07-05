@@ -14,11 +14,29 @@ import {
   TextField,
   Button,
   Alert,
+  IconButton,
+  Menu,
+  MenuItem,
+  ToggleButton,
+  ToggleButtonGroup,
+  Chip,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import StarIcon from '@mui/icons-material/Star';
+import HistoryIcon from '@mui/icons-material/History';
+import AlarmIcon from '@mui/icons-material/Alarm';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import SearchIcon from '@mui/icons-material/Search';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import { useContactsStore } from '@ui/store/contactsStore';
-import type { NewContactInput } from '@domain/contact';
+import { useTagsStore } from '@ui/store/tagsStore';
+import type { NewContactInput, ContactSortBy } from '@domain/contact';
+import { filterContactsByKeyword, filterContactsByTag, sortContacts } from '@domain/contact';
+import { ContactInteractionsDialog } from '@ui/components/ContactInteractionsDialog';
+import { SetReminderDialog } from '@ui/components/SetReminderDialog';
+import { EditContactDialog } from '@ui/components/EditContactDialog';
+import { DeleteContactDialog } from '@ui/components/DeleteContactDialog';
+import { TagsManagerDialog } from '@ui/components/TagsManagerDialog';
 
 interface ContactsListScreenProps {
   uid: string;
@@ -31,11 +49,29 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
   const [name, setName] = useState('');
   const [company, setCompany] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
+  const [activeContactId, setActiveContactId] = useState<string | null>(null);
+  const [reminderContactId, setReminderContactId] = useState<string | null>(null);
+  const [editContactId, setEditContactId] = useState<string | null>(null);
+  const [deleteContactId, setDeleteContactId] = useState<string | null>(null);
+  const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
+  const [menuContactId, setMenuContactId] = useState<string | null>(null);
+  const [keyword, setKeyword] = useState('');
+  const [sortBy, setSortBy] = useState<ContactSortBy>('name');
+  const [activeTagId, setActiveTagId] = useState<string | null>(null);
+  const [tagsManagerOpen, setTagsManagerOpen] = useState(false);
+  const { tags, subscribe: subscribeTags } = useTagsStore();
 
   useEffect(() => {
     const unsubscribe = subscribe(uid);
     return unsubscribe;
   }, [uid, subscribe]);
+
+  useEffect(() => subscribeTags(uid), [uid, subscribeTags]);
+
+  const visibleContacts = sortContacts(
+    filterContactsByTag(filterContactsByKeyword(contacts, keyword), activeTagId),
+    sortBy
+  );
 
   async function handleSubmit() {
     const input: NewContactInput = { name, company: company || undefined };
@@ -56,12 +92,56 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
         聯絡人
       </Typography>
 
+      {contacts.length > 0 && (
+        <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
+          <TextField
+            size="small"
+            placeholder="搜尋姓名/公司/職稱"
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+            slotProps={{ input: { startAdornment: <SearchIcon fontSize="small" sx={{ mr: 1 }} /> } }}
+            sx={{ flex: 1, minWidth: 200 }}
+          />
+          <ToggleButtonGroup
+            size="small"
+            exclusive
+            value={sortBy}
+            onChange={(_, value) => value && setSortBy(value)}
+          >
+            <ToggleButton value="name">依姓名</ToggleButton>
+            <ToggleButton value="importance">依星級</ToggleButton>
+          </ToggleButtonGroup>
+          <IconButton aria-label="標籤管理" onClick={() => setTagsManagerOpen(true)}>
+            <LocalOfferIcon fontSize="small" />
+          </IconButton>
+        </Box>
+      )}
+
+      {contacts.length > 0 && tags.length > 0 && (
+        <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
+          {tags.map((tag) => (
+            <Chip
+              key={tag.id}
+              label={tag.name}
+              size="small"
+              onClick={() => setActiveTagId(activeTagId === tag.id ? null : tag.id)}
+              color={activeTagId === tag.id ? 'primary' : 'default'}
+              variant={activeTagId === tag.id ? 'filled' : 'outlined'}
+            />
+          ))}
+        </Box>
+      )}
+
       {contacts.length === 0 && (
         <Typography color="text.secondary">還沒有聯絡人，點右下角按鈕新增第一位。</Typography>
       )}
 
+      {contacts.length > 0 && visibleContacts.length === 0 && (
+        <Typography color="text.secondary">找不到符合「{keyword}」的聯絡人。</Typography>
+      )}
+
       <Stack spacing={1.5}>
-        {contacts.map((contact) => (
+        {visibleContacts.map((contact) => (
           <Card key={contact.id} variant="elevation" elevation={1}>
             <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <Avatar>{contact.name.charAt(0)}</Avatar>
@@ -75,10 +155,88 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
                 <StarIcon fontSize="small" color={contact.importance >= 4 ? 'warning' : 'disabled'} />
                 <Typography variant="body2">{contact.importance}</Typography>
               </Box>
+              <IconButton
+                aria-label="設定提醒"
+                onClick={() => setReminderContactId(contact.id)}
+                color={contact.nextContactReminder ? 'primary' : 'default'}
+              >
+                <AlarmIcon fontSize="small" />
+              </IconButton>
+              <IconButton aria-label="互動紀錄" onClick={() => setActiveContactId(contact.id)}>
+                <HistoryIcon fontSize="small" />
+              </IconButton>
+              <IconButton
+                aria-label="更多操作"
+                onClick={(e) => {
+                  setMenuAnchor(e.currentTarget);
+                  setMenuContactId(contact.id);
+                }}
+              >
+                <MoreVertIcon fontSize="small" />
+              </IconButton>
             </CardContent>
           </Card>
         ))}
       </Stack>
+
+      <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={() => setMenuAnchor(null)}>
+        <MenuItem
+          onClick={() => {
+            setEditContactId(menuContactId);
+            setMenuAnchor(null);
+          }}
+        >
+          編輯
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            setDeleteContactId(menuContactId);
+            setMenuAnchor(null);
+          }}
+        >
+          刪除
+        </MenuItem>
+      </Menu>
+
+      {editContactId && (
+        <EditContactDialog
+          uid={uid}
+          contact={contacts.find((c) => c.id === editContactId)!}
+          open
+          onClose={() => setEditContactId(null)}
+        />
+      )}
+
+      {deleteContactId && (
+        <DeleteContactDialog
+          uid={uid}
+          contactId={deleteContactId}
+          contactName={contacts.find((c) => c.id === deleteContactId)?.name ?? ''}
+          open
+          onClose={() => setDeleteContactId(null)}
+        />
+      )}
+
+      <TagsManagerDialog uid={uid} open={tagsManagerOpen} onClose={() => setTagsManagerOpen(false)} />
+
+      {activeContactId && (
+        <ContactInteractionsDialog
+          uid={uid}
+          contactId={activeContactId}
+          contactName={contacts.find((c) => c.id === activeContactId)?.name ?? ''}
+          open
+          onClose={() => setActiveContactId(null)}
+        />
+      )}
+
+      {reminderContactId && (
+        <SetReminderDialog
+          uid={uid}
+          contact={contacts.find((c) => c.id === reminderContactId)!}
+          open
+          onClose={() => setReminderContactId(null)}
+        />
+      )}
 
       <Fab
         color="primary"
