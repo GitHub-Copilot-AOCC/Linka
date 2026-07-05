@@ -16,7 +16,7 @@
 ### 功能
 | 章節 | 功能 | 備註 |
 |---|---|---|
-| §5.1 | 帳號登入/註冊/登出、忘記密碼 | Email/密碼完整；**Google OAuth 程式碼寫好但被卡在主控台手動啟用**（需要 OAuth client_id，API 無法代辦） |
+| §5.1 | 帳號登入/註冊/登出、忘記密碼、Google OAuth | Email/密碼完整；**Google OAuth 已在 Console 手動啟用並驗證**——測試時收到 `auth/popup-blocked`（自動化環境阻擋彈出視窗，不是設定問題），確認 provider 設定正確、程式碼正確呼叫 `signInWithPopup`；真人點擊不會遇到這個阻擋 |
 | §5.2 | 聯絡人 CRUD 全套 | 新增/編輯/刪除、搜尋、依姓名/星級排序、標籤與社交圈篩選 |
 | §5.2 | 聯絡人照片上傳（Storage） | Canvas 壓縮 + 上傳/刪除已完成；**檔案選擇的實際點擊互動尚未手動測過**（自動化工具在這個環境模擬不了真實檔案選取），合併前建議手動點一次驗證 |
 | §5.3 | 互動紀錄（手動） | 會議/通話/Email 記錄，綁定聯絡人 |
@@ -34,7 +34,6 @@
 
 | 章節 | 功能 | 依賴/備註 |
 |---|---|---|
-| §5.1 | Google OAuth 啟用 | 卡在人工手動點 Console，不是程式碼工作 |
 | §5.3a | AI 語音/文字快速記錄 | 需要 Cloud Function（**已指派 Codex**，見下方） |
 | §5.5 項目1 | 名片 OCR | 需要 Cloud Function + Gemini（**已指派 Codex**：先把 `geminiProxy` 既有 `extractContactFromCard` action 換成 `gemini-3.1-flash-lite`） |
 | §5.5a | AI 問答秘書（聊天） | 需要 Cloud Function，「先查詢後生成」二階段設計 |
