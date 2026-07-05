@@ -102,6 +102,9 @@
   "settings": {
     "title": "Settings",
     "account": "Account",
+    "aiUsage": "AI usage (this month)",
+    "aiUsageCount": "{{used}} / {{limit}}",
+    "aiUsageUnavailable": "No usage data yet",
     "syncStatus": "Sync status",
     "operationLog": "Activity log",
     "view": "View",

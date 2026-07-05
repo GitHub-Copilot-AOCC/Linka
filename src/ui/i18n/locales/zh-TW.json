@@ -102,6 +102,9 @@
   "settings": {
     "title": "設定",
     "account": "帳號",
+    "aiUsage": "AI 使用次數（本月）",
+    "aiUsageCount": "{{used}} / {{limit}} 次",
+    "aiUsageUnavailable": "尚無用量資料",
     "syncStatus": "同步狀態",
     "operationLog": "操作歷史",
     "view": "查看",
