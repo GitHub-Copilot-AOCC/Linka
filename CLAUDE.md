@@ -95,3 +95,5 @@ src/ui              — React 元件、畫面、路由（僅此層可以是 Web-
 | AI | Gemini `gemini-3.1-flash-lite`（v1 預設模型，見 spec.md §8.5），透過 Cloud Function 代理（`geminiProxy`），前端不可直接持有 API Key |
 | 支付 | Stripe（Web 訂閱） |
 | 未來手機版元件庫 | `react-native-paper`（與 Web 共用同一份 Material 3 token） |
+
+**已知踩坑**：目前安裝的 MUI 版本（`@mui/material` ^9）搭配 React 19，`<Stack direction="row" alignItems="center">` 這種寫法的型別推論會壞掉（TS2769，overload 判斷成 `component` 必填）。遇到需要橫向排列 + 對齊的情境，改用 `<Box sx={{ display: 'flex', alignItems: 'center', gap: N }}>`，不要用 `Stack` 的 `alignItems`/`direction` 組合。

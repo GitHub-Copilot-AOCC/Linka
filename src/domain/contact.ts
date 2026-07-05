@@ -85,3 +85,13 @@ export function applyContactDefaults(input: NewContactInput): Omit<Contact, 'id'
     updatedAt: now,
   });
 }
+
+/** 待處理提醒：nextContactReminder 已設定且不晚於今天（見 spec.md §5.4）。 */
+export function isReminderDue(contact: Contact, todayDateString: string): boolean {
+  return Boolean(contact.nextContactReminder) && contact.nextContactReminder! <= todayDateString;
+}
+
+/** 依提醒日期排序（早到晚），供首頁待辦清單使用。 */
+export function sortByReminderDate(contacts: Contact[]): Contact[] {
+  return [...contacts].sort((a, b) => (a.nextContactReminder ?? '').localeCompare(b.nextContactReminder ?? ''));
+}

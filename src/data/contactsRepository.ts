@@ -4,6 +4,7 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
+  deleteField,
   onSnapshot,
   query,
   orderBy,
@@ -64,8 +65,14 @@ export async function updateContact(
   patch: Partial<Omit<Contact, 'id' | 'createdAt'>>
 ): Promise<void> {
   if (!db) throw new Error('Firestore is not configured');
+  // 呼叫端傳入 undefined 代表「清除這個欄位」，轉成 Firestore 的 deleteField()
+  // sentinel；updateDoc（不同於 addDoc/setDoc）遇到真正的 undefined 值仍會拋錯。
+  const sanitized: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(patch)) {
+    sanitized[key] = value === undefined ? deleteField() : value;
+  }
   await updateDoc(doc(db, 'users', uid, 'contacts', contactId), {
-    ...patch,
+    ...sanitized,
     updatedAt: Date.now(),
   });
 }
