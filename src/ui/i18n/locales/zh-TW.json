@@ -158,5 +158,21 @@
     "assistantLabel": "AI 秘書",
     "citationWithDate": "{{name}}（{{date}}）",
     "genericError": "問答失敗，請稍後再試。"
+  },
+  "docImport": {
+    "menuLabel": "從文件匯入",
+    "title": "從文件批次匯入聯絡人",
+    "description": "上傳一份包含聯絡人清單的 PDF、Word（.docx）或 Excel（.xlsx/.csv）文件，AI 會自動解析出聯絡人，供您確認後再匯入。",
+    "chooseFile": "選擇檔案",
+    "fileTooLarge": "檔案過大，請選擇 {{maxMB}}MB 以下的檔案。",
+    "unsupportedType": "不支援的檔案格式，請選擇 PDF、.docx、.xlsx 或 .csv 檔案。",
+    "offlineError": "離線時無法使用文件匯入功能。",
+    "parsing": "AI 解析中…",
+    "noContactsFound": "無法從這份文件中辨識出任何聯絡人。",
+    "genericError": "文件解析失敗，請稍後再試。",
+    "foundCount": "找到 {{count}} 筆聯絡人，請確認並勾選要匯入的項目：",
+    "duplicate": "可能重複",
+    "importSelected": "匯入 {{count}} 筆",
+    "importing": "匯入中…"
   }
 }

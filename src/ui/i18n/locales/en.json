@@ -158,5 +158,21 @@
     "assistantLabel": "AI Assistant",
     "citationWithDate": "{{name}} ({{date}})",
     "genericError": "Something went wrong. Please try again."
+  },
+  "docImport": {
+    "menuLabel": "Import from document",
+    "title": "Import contacts from document",
+    "description": "Upload a PDF, Word (.docx), or Excel (.xlsx/.csv) file containing a contact list. AI will extract the contacts for you to review before importing.",
+    "chooseFile": "Choose file",
+    "fileTooLarge": "File is too large — please choose a file under {{maxMB}}MB.",
+    "unsupportedType": "Unsupported file type — please choose a PDF, .docx, .xlsx, or .csv file.",
+    "offlineError": "Document import is unavailable while offline.",
+    "parsing": "Analyzing document…",
+    "noContactsFound": "No contacts could be identified in this document.",
+    "genericError": "Failed to parse this document. Please try again.",
+    "foundCount": "Found {{count}} contacts — review and select the ones to import:",
+    "duplicate": "Possible duplicate",
+    "importSelected": "Import {{count}}",
+    "importing": "Importing…"
   }
 }

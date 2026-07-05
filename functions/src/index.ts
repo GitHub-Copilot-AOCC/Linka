@@ -1,6 +1,67 @@
 import { onRequest } from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import * as XLSX from "xlsx";
+
+// 文件通訊錄批次匯入（見 spec.md §5.7）支援的文件類型提示。
+type DocumentTypeHint = "pdf" | "docx" | "xlsx" | "csv";
+
+/**
+ * 依文件類型從 base64 內容抽取純文字/表格內容，供後續交給 Gemini 結構化解析。
+ * PDF/Word 抽取純文字；Excel/CSV 直接讀取表格列並轉為簡易文字表格，減少 token 用量並保留欄位對齊資訊。
+ */
+async function extractDocumentText(base64Data: string, docType: DocumentTypeHint): Promise<string> {
+    const buffer = Buffer.from(base64Data, "base64");
+
+    switch (docType) {
+        case "pdf": {
+            // pdf-parse 沒有官方型別的預設 export 簽章一致，用 require 動態載入避免建置期型別問題。
+            // eslint-disable-next-line @typescript-eslint/no-var-requires
+            const pdfParse = require("pdf-parse");
+            const data = await pdfParse(buffer);
+            return data.text as string;
+        }
+        case "docx": {
+            const mammoth = require("mammoth");
+            const result = await mammoth.extractRawText({ buffer });
+            return result.value as string;
+        }
+        case "xlsx": {
+            const workbook = XLSX.read(buffer, { type: "buffer" });
+            return workbookToText(workbook);
+        }
+        case "csv": {
+            const workbook = XLSX.read(buffer, { type: "buffer", raw: true });
+            return workbookToText(workbook);
+        }
+        default:
+            throw new Error(`Unsupported document type: ${docType}`);
+    }
+}
+
+/** 將 SheetJS workbook 轉成簡易文字表格（每列以 tab 分隔），所有分頁都納入。 */
+function workbookToText(workbook: XLSX.WorkBook): string {
+    const sheetTexts = workbook.SheetNames.map((sheetName) => {
+        const sheet = workbook.Sheets[sheetName];
+        const rows: unknown[][] = XLSX.utils.sheet_to_json(sheet, { header: 1, blankrows: false });
+        const lines = rows.map((row) => row.map((cell) => (cell === undefined || cell === null ? "" : String(cell))).join("\t"));
+        return `# Sheet: ${sheetName}\n${lines.join("\n")}`;
+    });
+    return sheetTexts.join("\n\n");
+}
+
+const CONTACT_DOCUMENT_EXTRACTION_PROMPT = `以下是一份通訊錄文件抽取出的原始文字內容（可能是表格，也可能是條列文字）。
+請從中辨識出所有列出的聯絡人，並以 JSON 陣列回傳，每筆聯絡人物件格式為：
+{"name": string, "role": string, "company": string, "phone": string, "email": string}
+
+規則：
+- name 為必填，辨識不到姓名的列請略過
+- 其餘欄位辨識不到就回傳空字串 ""
+- 電話號碼保留原始格式，不要自行改寫
+- 只回傳 JSON 陣列本身，不要加上任何說明文字或 markdown 標記
+
+文件內容：
+`;
 
 // Use secrets for the API Key
 const GEMINI_API_KEY = defineSecret("GEMINI_API_KEY");
@@ -110,6 +171,29 @@ export const geminiProxy = onRequest({
                 });
                 const apiResult = await model.generateContent({
                     contents: [{ role: 'user', parts: [{ text: prompt }] }],
+                });
+                result = cleanAndParseJson(apiResult.response.text());
+                break;
+            }
+
+            case "parseContactDocument": {
+                const { base64Data, docType } = payload as { base64Data: string; docType: DocumentTypeHint };
+                console.log(`Parsing contact document (${docType})...`);
+                const extractedText = await extractDocumentText(base64Data, docType);
+                const truncatedText = extractedText.slice(0, 50000); // 避免超大文件導致 prompt 過長
+                const model = genAI.getGenerativeModel({
+                    model: GEMINI_MODEL,
+                    generationConfig: {
+                        responseMimeType: "application/json"
+                    }
+                });
+                const apiResult = await model.generateContent({
+                    contents: [
+                        {
+                            role: "user",
+                            parts: [{ text: CONTACT_DOCUMENT_EXTRACTION_PROMPT + truncatedText }],
+                        },
+                    ],
                 });
                 result = cleanAndParseJson(apiResult.response.text());
                 break;
