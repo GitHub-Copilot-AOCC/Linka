@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Interaction, NewInteractionInput } from '@domain/interaction';
+import type { CreateInteractionInput, Interaction } from '@domain/interaction';
 import { validateInteraction } from '@domain/interaction';
 import {
   subscribeInteractionsForContact,
@@ -13,7 +13,7 @@ interface InteractionsState {
   subscribe: (uid: string, contactId: string) => () => void;
   add: (
     uid: string,
-    input: NewInteractionInput,
+    input: CreateInteractionInput,
     contactName: string
   ) => Promise<{ ok: boolean; errors?: Record<string, string> }>;
   remove: (uid: string, interactionId: string) => Promise<void>;
@@ -33,9 +33,10 @@ export const useInteractionsStore = create<InteractionsState>((set) => ({
     if (!result.valid) {
       return { ok: false, errors: result.errors as Record<string, string> };
     }
+
     await createInteraction(uid, input);
     createLogEntry(uid, {
-      action: '新增互動紀錄',
+      action: '新增互動',
       contactName,
       type: 'interaction',
       details: input.description,

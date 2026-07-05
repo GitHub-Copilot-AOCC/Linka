@@ -1,23 +1,26 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
+  Alert,
+  Autocomplete,
   Button,
-  TextField,
-  MenuItem,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Divider,
+  IconButton,
   List,
   ListItem,
   ListItemText,
-  IconButton,
-  Divider,
+  MenuItem,
+  TextField,
   Typography,
-  Alert,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useInteractionsStore } from '@ui/store/interactionsStore';
+import { useContactsStore } from '@ui/store/contactsStore';
 import { todayDateString } from '@domain/interaction';
+import type { Contact } from '@domain/contact';
 import type { InteractionType } from '@domain/interaction';
 
 interface ContactInteractionsDialogProps {
@@ -34,13 +37,14 @@ const TYPE_LABEL: Record<InteractionType, string> = {
   email: 'Email',
 };
 
-/** 互動紀錄對話框（見 spec.md §5.3）：顯示歷史 + 新增表單，日期預設今天、無獨立標題欄位。 */
 export function ContactInteractionsDialog({ uid, contactId, contactName, open, onClose }: ContactInteractionsDialogProps) {
   const { byContactId, subscribe, add, remove } = useInteractionsStore();
+  const contacts = useContactsStore((state) => state.contacts);
   const interactions = byContactId[contactId] ?? [];
   const [type, setType] = useState<InteractionType>('meeting');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(todayDateString());
+  const [selectedContacts, setSelectedContacts] = useState<Contact[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -49,14 +53,31 @@ export function ContactInteractionsDialog({ uid, contactId, contactName, open, o
     return unsubscribe;
   }, [open, uid, contactId, subscribe]);
 
+  useEffect(() => {
+    const primaryContact = contacts.find((contact) => contact.id === contactId);
+    setSelectedContacts(primaryContact ? [primaryContact] : []);
+  }, [contactId, contacts, open]);
+
+  const contactOptions = useMemo(() => contacts, [contacts]);
+
   async function handleAdd() {
-    const result = await add(uid, { contactIds: [contactId], type, description, date }, contactName);
+    const result = await add(
+      uid,
+      {
+        contactIds: selectedContacts.map((contact) => contact.id),
+        type,
+        description,
+        date,
+      },
+      selectedContacts.map((contact) => contact.name).join('、') || contactName
+    );
+
     if (result.ok) {
       setDescription('');
       setDate(todayDateString());
       setError(null);
     } else {
-      setError(Object.values(result.errors ?? {})[0] ?? '新增失敗');
+      setError(Object.values(result.errors ?? {})[0] ?? '新增互動失敗');
     }
   }
 
@@ -64,15 +85,29 @@ export function ContactInteractionsDialog({ uid, contactId, contactName, open, o
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle>{contactName} 的互動紀錄</DialogTitle>
       <DialogContent>
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
 
+        <Autocomplete
+          multiple
+          options={contactOptions}
+          value={selectedContacts}
+          getOptionLabel={(option) => option.name}
+          isOptionEqualToValue={(option, value) => option.id === value.id}
+          onChange={(_, value) => setSelectedContacts(value)}
+          renderInput={(params) => <TextField {...params} label="綁定聯絡人" margin="dense" />}
+          sx={{ mt: 1 }}
+        />
         <TextField
           select
-          label="類型"
+          label="互動類型"
           fullWidth
           margin="dense"
           value={type}
-          onChange={(e) => setType(e.target.value as InteractionType)}
+          onChange={(event) => setType(event.target.value as InteractionType)}
         >
           {Object.entries(TYPE_LABEL).map(([value, label]) => (
             <MenuItem key={value} value={value}>
@@ -81,13 +116,13 @@ export function ContactInteractionsDialog({ uid, contactId, contactName, open, o
           ))}
         </TextField>
         <TextField
-          label="描述"
+          label="互動描述"
           fullWidth
           margin="dense"
           multiline
           rows={2}
           value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          onChange={(event) => setDescription(event.target.value)}
         />
         <TextField
           label="日期"
@@ -95,7 +130,7 @@ export function ContactInteractionsDialog({ uid, contactId, contactName, open, o
           fullWidth
           margin="dense"
           value={date}
-          onChange={(e) => setDate(e.target.value)}
+          onChange={(event) => setDate(event.target.value)}
           slotProps={{ inputLabel: { shrink: true } }}
         />
         <Button variant="contained" onClick={handleAdd} sx={{ mt: 1 }}>
@@ -105,7 +140,7 @@ export function ContactInteractionsDialog({ uid, contactId, contactName, open, o
         <Divider sx={{ my: 2 }} />
 
         {interactions.length === 0 ? (
-          <Typography color="text.secondary">還沒有互動紀錄</Typography>
+          <Typography color="text.secondary">目前還沒有互動紀錄。</Typography>
         ) : (
           <List dense>
             {interactions.map((interaction) => (
