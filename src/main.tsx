@@ -3,12 +3,21 @@ import { createRoot } from 'react-dom/client';
 import { ThemeProvider, CssBaseline, Box, Typography } from '@mui/material';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { theme } from '@ui/theme/theme';
-import { HomeScreen } from '@ui/screens/HomeScreen';
+import { DashboardScreen } from '@ui/screens/DashboardScreen';
+import { ContactsListScreen } from '@ui/screens/ContactsListScreen';
+import { SettingsScreen } from '@ui/screens/SettingsScreen';
 import { LoginScreen } from '@ui/screens/LoginScreen';
 import { RegisterScreen } from '@ui/screens/RegisterScreen';
 import { ProtectedRoute } from '@ui/routes/ProtectedRoute';
+import { NavShell } from '@ui/layout/NavShell';
 import { useAuthStore } from '@ui/store/authStore';
 import { isFirebaseConfigured } from '@data/firebase';
+
+function ContactsRoute() {
+  const user = useAuthStore((s) => s.user);
+  if (!user) return null;
+  return <ContactsListScreen uid={user.uid} />;
+}
 
 // 開發階段暫時用 index-new.html 作為獨立進入點（與舊版並存，見 CLAUDE.md §1）；
 // Router 用 basename 對應到這個路徑，之後正式取代舊版 index.html 時把 basename 移除即可。
@@ -43,7 +52,29 @@ function App() {
           path="/"
           element={
             <ProtectedRoute>
-              <HomeScreen />
+              <NavShell>
+                <DashboardScreen />
+              </NavShell>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/contacts"
+          element={
+            <ProtectedRoute>
+              <NavShell>
+                <ContactsRoute />
+              </NavShell>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <NavShell>
+                <SettingsScreen />
+              </NavShell>
             </ProtectedRoute>
           }
         />
