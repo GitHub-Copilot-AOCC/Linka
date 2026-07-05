@@ -25,6 +25,8 @@
 | §5.11 | 離線/同步狀態指示 | Firestore offline persistence 本來就有，這次補上 UI 三態顯示 |
 | §11.2 | Material 導覽（Bottom Nav/Rail） | 手機用底部導覽、桌面用側邊 Rail，已驗證兩種寬度切換正確 |
 | §5.12 | 多語言（i18next） | 繁中/英文，瀏覽器自動偵測 + 設定手動切換，已驗證整站切換正確；使用者資料（姓名/公司/標籤）刻意不翻譯 |
+| §5.9 | vCard (.vcf) 匯入 | 解析→預覽勾選（重複資料預警）→批次寫入；解析邏輯已直接驗證，**檔案選取點擊互動同樣未手動測過**；Google 聯絡人 API 匯入未做（需額外 OAuth scope） |
+| §3 | AI 用量顯示（唯讀） | Settings 顯示「X / 1000 次」+ 進度條；**真正的配額執行/增量是後端工作**（Security Rules 擋掉前端寫入），前端只做顯示，已用測試文件驗證兩種狀態 |
 
 ---
 
@@ -40,9 +42,9 @@
 | §5.6 | AI 主動提醒（生日/久未聯絡） | 需要 Cloud Scheduler + `AgentSuggestion` |
 | §5.7 | 文件通訊錄批次匯入 | 需要 Cloud Function 解析 PDF/Word/Excel |
 | §5.8 | 網路身分研究摘要 + 照片搜尋 | 需要 Cloud Function + Google Search 工具 |
-| §5.9 | Google 聯絡人/vCard 匯入 | 前端工作，需要 OAuth scope 或檔案解析 |
+| §5.9 | Google 聯絡人 API 匯入 | 需要額外 OAuth scope（People API），vCard 部分已完成 |
 | §8.4 | Stripe 訂閱整合 | 完全沒開始 |
-| §3 | 免費版額度實際限制（UsageQuota 執行） | 資料模型有欄位，但沒有真正計費配額的邏輯 |
+| §3 | AI 額度真正執行（增量/擋額度） | 前端唯讀顯示已完成，**寫入/增量是 Cloud Function 工作**，見下方 Codex 協調事項（periodId 格式） |
 | — | Cloud Functions 本體 | `functions/` 目錄目前是舊版程式碼，`geminiProxy` 需要全面重寫擴充；**第一個任務已交給 Codex**：把 4 個既有 action 的模型從 `gemini-2.0-flash-exp` 換成 `gemini-3.1-flash-lite` |
 
 ---
@@ -63,8 +65,13 @@
 這四項幾乎不需要碰 `src/` 任何檔案，可以完全並行。
 
 ### 建議：前端持續開發
-- ~~§11.2 Material 導覽骨架~~、~~§5.2 照片上傳~~、~~§5.12 多語言~~ 都已完成（見上方已完成表格）
-- 下一批可考慮：§5.9 聯絡人匯入（Google/vCard）、§3 免費版額度執行邏輯，或等 Codex 那邊的 Cloud Function 出來後接前端串接
+- ~~§11.2 Material 導覽骨架~~、~~§5.2 照片上傳~~、~~§5.12 多語言~~、~~§5.9 vCard 匯入~~、~~§3 用量顯示~~ 都已完成（見上方已完成表格）
+- 目前所有「純前端、不需要 Cloud Function」的項目已經做完。下一批建議：
+  - 等 Codex 那邊的 `geminiProxy` 出來後，接第一個 AI 功能的前端串接（名片 OCR 最簡單，UI 只需一個拍照/上傳按鈕 + 呼叫 Cloud Function + 帶入新增聯絡人表單）
+  - 或先做 §8.4 Stripe 前端部分（Checkout 按鈕、方案頁面），但這塊涉及金流，動工前建議先跟你確認範圍
+
+### Codex 協調事項：periodId 格式
+`src/domain/usageQuota.ts` 的 `currentPeriodId()` 定義配額文件 ID 格式為 `YYYY-MM`（例如 `2026-07`）。Codex 之後寫 Cloud Function 建立/更新 `users/{uid}/usage/{periodId}` 時，**periodId 必須用同一種格式**，否則前端會讀到不同文件、永遠顯示「尚無用量資料」。
 
 ### 交接風險提醒
 這批功能是**疊在一起的分支**（一個接一個從前一個開出來，不是各自獨立於 `main`）。開始 Cloud Functions 工作前，建議：
@@ -72,7 +79,7 @@
 - 若時間緊迫必須立刻並行，同事可以先從 `feature/operation-log` 開分支（拿到最新的 domain 型別定義如 `Interaction`、`Tag`、`LogEntry`），但要留意之後合併回 `main` 時的分支順序。
 
 ### 目前分支狀態（2026-07-05）
-以下分支依序疊加（每個都包含前一個的所有變更），`feature/i18n` 是目前最新、包含全部 12 個功能的分支：
+以下分支依序疊加（每個都包含前一個的所有變更），`feature/usage-quota-display` 是目前最新、包含全部 14 個功能的分支：
 
 ```
 main
@@ -87,11 +94,13 @@ main
                                  └─ feature/operation-log
                                      └─ feature/nav-shell
                                          └─ feature/contact-photos
-                                             └─ feature/i18n   ← 最新
+                                             └─ feature/i18n
+                                                 └─ feature/vcard-import
+                                                     └─ feature/usage-quota-display   ← 最新
 ```
 
 合併方式二選一：
-1. **簡單**：直接把 `feature/i18n` 合併進 `main`（一次拿到全部 12 個功能）
+1. **簡單**：直接把 `feature/usage-quota-display` 合併進 `main`（一次拿到全部 14 個功能）
 2. **逐步**：依上圖順序一個個合併，方便逐個 review
 
 **合併前提醒**：`feature/contact-photos` 的照片上傳互動還沒手動點過（見上方已完成表格的備註），建議合併前先手動測一次「新增照片」按鈕。
