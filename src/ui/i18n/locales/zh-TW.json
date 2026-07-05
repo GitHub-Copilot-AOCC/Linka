@@ -55,6 +55,7 @@
     "setReminder": "設定提醒",
     "interactions": "互動紀錄",
     "suggestedTopics": "建議話題",
+    "webResearch": "搜尋網路資料",
     "longSilenceWarning": "超過 60 天沒有互動紀錄，該找個時間聯絡一下了",
     "moreActions": "更多操作",
     "edit": "編輯",
@@ -127,6 +128,15 @@
     "regenerate": "重新產生",
     "empty": "目前沒有建議話題，稍後再試試看。",
     "genericError": "取得建議話題失敗，請稍後再試。"
+  },
+  "contactResearch": {
+    "title": "{{name}} 的網路研究摘要",
+    "disclaimer": "此摘要由 AI 自動搜尋網路公開資訊產生，可能不準確，或誤植為同名同姓的其他人，請務必自行查證來源後再參考使用。",
+    "search": "搜尋網路資料",
+    "searchAgain": "再次搜尋",
+    "sources": "來源：",
+    "empty": "尚無研究紀錄，點擊「搜尋網路資料」開始第一次搜尋。",
+    "genericError": "搜尋失敗，請稍後再試。"
   },
   "businessCard": {
     "menuLabel": "掃描名片",

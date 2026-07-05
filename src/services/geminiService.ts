@@ -11,6 +11,8 @@ import type { ContactLite, ContactQueryPlan, AssistantAnswer } from '@domain/ass
 import { buildQueryPlanPrompt, parseQueryPlan, buildAnswerPrompt, parseAssistantAnswer } from '@domain/assistantChat';
 import type { DocumentTypeHint, ParsedDocumentContact } from '@domain/documentImport';
 import { parseDocumentContacts } from '@domain/documentImport';
+import type { ContactResearchResult } from '@domain/contactResearch';
+import { buildContactResearchPrompt, parseContactResearchResult } from '@domain/contactResearch';
 
 export class GeminiServiceError extends Error {}
 
@@ -87,4 +89,15 @@ export async function parseContactDocument(
 ): Promise<ParsedDocumentContact[]> {
   const raw = await callGeminiProxy('parseContactDocument', { base64Data, docType });
   return parseDocumentContacts(raw);
+}
+
+/**
+ * 聯絡人網路身分研究摘要（見 spec.md §5.8，僅文字摘要子功能，不含照片搜尋）：
+ * 呼叫 Cloud Function 以 Gemini + Google 搜尋 grounding 工具搜尋公開資訊並摘要，
+ * 回傳結果供使用者確認後再呼叫 repository 附加到 researchLog（不在此處寫入資料庫）。
+ */
+export async function researchContactProfile(contact: Contact): Promise<ContactResearchResult> {
+  const { prompt, systemInstruction } = buildContactResearchPrompt(contact);
+  const raw = await callGeminiProxy('researchContactProfile', { prompt, systemInstruction });
+  return parseContactResearchResult(raw);
 }
