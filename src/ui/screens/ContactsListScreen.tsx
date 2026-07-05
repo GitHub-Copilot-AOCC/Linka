@@ -15,15 +15,20 @@ import {
   Button,
   Alert,
   IconButton,
+  Menu,
+  MenuItem,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import StarIcon from '@mui/icons-material/Star';
 import HistoryIcon from '@mui/icons-material/History';
 import AlarmIcon from '@mui/icons-material/Alarm';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { useContactsStore } from '@ui/store/contactsStore';
 import type { NewContactInput } from '@domain/contact';
 import { ContactInteractionsDialog } from '@ui/components/ContactInteractionsDialog';
 import { SetReminderDialog } from '@ui/components/SetReminderDialog';
+import { EditContactDialog } from '@ui/components/EditContactDialog';
+import { DeleteContactDialog } from '@ui/components/DeleteContactDialog';
 
 interface ContactsListScreenProps {
   uid: string;
@@ -38,6 +43,10 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
   const [formError, setFormError] = useState<string | null>(null);
   const [activeContactId, setActiveContactId] = useState<string | null>(null);
   const [reminderContactId, setReminderContactId] = useState<string | null>(null);
+  const [editContactId, setEditContactId] = useState<string | null>(null);
+  const [deleteContactId, setDeleteContactId] = useState<string | null>(null);
+  const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
+  const [menuContactId, setMenuContactId] = useState<string | null>(null);
 
   useEffect(() => {
     const unsubscribe = subscribe(uid);
@@ -92,10 +101,57 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
               <IconButton aria-label="互動紀錄" onClick={() => setActiveContactId(contact.id)}>
                 <HistoryIcon fontSize="small" />
               </IconButton>
+              <IconButton
+                aria-label="更多操作"
+                onClick={(e) => {
+                  setMenuAnchor(e.currentTarget);
+                  setMenuContactId(contact.id);
+                }}
+              >
+                <MoreVertIcon fontSize="small" />
+              </IconButton>
             </CardContent>
           </Card>
         ))}
       </Stack>
+
+      <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={() => setMenuAnchor(null)}>
+        <MenuItem
+          onClick={() => {
+            setEditContactId(menuContactId);
+            setMenuAnchor(null);
+          }}
+        >
+          編輯
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            setDeleteContactId(menuContactId);
+            setMenuAnchor(null);
+          }}
+        >
+          刪除
+        </MenuItem>
+      </Menu>
+
+      {editContactId && (
+        <EditContactDialog
+          uid={uid}
+          contact={contacts.find((c) => c.id === editContactId)!}
+          open
+          onClose={() => setEditContactId(null)}
+        />
+      )}
+
+      {deleteContactId && (
+        <DeleteContactDialog
+          uid={uid}
+          contactId={deleteContactId}
+          contactName={contacts.find((c) => c.id === deleteContactId)?.name ?? ''}
+          open
+          onClose={() => setDeleteContactId(null)}
+        />
+      )}
 
       {activeContactId && (
         <ContactInteractionsDialog
