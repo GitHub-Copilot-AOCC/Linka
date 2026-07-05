@@ -1,0 +1,63 @@
+rules_version = '2';
+
+// 對照 spec.md §7 資料模型：所有資料為 user-scoped，路徑皆為 users/{uid}/...
+// 核心原則：任何人只能存取自己 uid 底下的資料，不做任何跨帳號分享（見 spec.md §2、§6 隱私）。
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    // UserProfile：可讀寫自己的 profile，但 plan/subscriptionStatus/subscriptionSource
+    // 只能由 Cloud Function（Admin SDK，繞過 Security Rules）寫入，客戶端不可自行變更。
+    match /users/{uid} {
+      allow read: if isOwner(uid);
+      allow create: if isOwner(uid);
+      allow update: if isOwner(uid)
+        && request.resource.data.plan == resource.data.plan
+        && request.resource.data.subscriptionStatus == resource.data.subscriptionStatus
+        && request.resource.data.subscriptionSource == resource.data.subscriptionSource;
+      allow delete: if false;
+
+      // UsageQuota（§3 商業模式）：僅供讀取，額度計數只能由 Cloud Function 更新，
+      // 避免使用者自行竄改 aiCallsUsed 規避配額限制。
+      match /usage/{periodId} {
+        allow read: if isOwner(uid);
+        allow write: if false;
+      }
+
+      // Contact（§5.2、§7）：擁有者完整 CRUD。
+      match /contacts/{contactId} {
+        allow read, write: if isOwner(uid);
+      }
+
+      // Interaction（§5.3、§7，v1 改為獨立集合，以 contactIds 綁定多位聯絡人）。
+      match /interactions/{interactionId} {
+        allow read, write: if isOwner(uid);
+      }
+
+      // Tag（§5.2）：擁有者完整 CRUD。
+      match /tags/{tagId} {
+        allow read, write: if isOwner(uid);
+      }
+
+      // LogEntry（§5.10 操作歷史）：僅供讀取與新增，不允許修改/刪除既有紀錄，
+      // 保持操作歷史的可信度（審計紀錄不應被事後竄改）。
+      match /logs/{logId} {
+        allow read, create: if isOwner(uid);
+        allow update, delete: if false;
+      }
+
+      // AgentSuggestion（§5.6）：由排程 Cloud Function 產生（Admin SDK 繞過規則），
+      // 客戶端只能讀取與更新狀態（採納/忽略/完成），不可自行新增或刪除建議。
+      match /suggestions/{suggestionId} {
+        allow read: if isOwner(uid);
+        allow update: if isOwner(uid)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);
+        allow create, delete: if false;
+      }
+    }
+  }
+}
