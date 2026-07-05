@@ -113,5 +113,15 @@
     "syncing": "Syncing",
     "synced": "Synced",
     "offlineTooltip": "No network connection — data will sync automatically once you're back online"
+  },
+  "import": {
+    "menuLabel": "Import contacts",
+    "title": "Import contacts",
+    "description": "Choose a vCard (.vcf) file to import multiple contacts.",
+    "chooseFile": "Choose file",
+    "noContactsFound": "No contacts found in this file",
+    "foundCount": "Found {{count}} contacts — select the ones to import:",
+    "duplicate": "Possible duplicate",
+    "importSelected": "Import {{count}}"
   }
 }

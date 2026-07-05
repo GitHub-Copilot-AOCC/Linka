@@ -113,5 +113,15 @@
     "syncing": "同步中",
     "synced": "已同步",
     "offlineTooltip": "無網路連線，資料會在恢復連線後自動同步"
+  },
+  "import": {
+    "menuLabel": "匯入聯絡人",
+    "title": "匯入聯絡人",
+    "description": "選擇一份 vCard（.vcf）檔案，匯入多筆聯絡人。",
+    "chooseFile": "選擇檔案",
+    "noContactsFound": "這個檔案裡沒有找到任何聯絡人",
+    "foundCount": "找到 {{count}} 筆聯絡人，勾選要匯入的項目：",
+    "duplicate": "可能重複",
+    "importSelected": "匯入 {{count}} 筆"
   }
 }

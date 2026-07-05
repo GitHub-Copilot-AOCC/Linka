@@ -28,6 +28,7 @@ import AlarmIcon from '@mui/icons-material/Alarm';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import SearchIcon from '@mui/icons-material/Search';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
 import { useTranslation } from 'react-i18next';
 import { useContactsStore } from '@ui/store/contactsStore';
 import { useTagsStore } from '@ui/store/tagsStore';
@@ -38,6 +39,7 @@ import { SetReminderDialog } from '@ui/components/SetReminderDialog';
 import { EditContactDialog } from '@ui/components/EditContactDialog';
 import { DeleteContactDialog } from '@ui/components/DeleteContactDialog';
 import { TagsManagerDialog } from '@ui/components/TagsManagerDialog';
+import { ImportContactsDialog } from '@ui/components/ImportContactsDialog';
 
 interface ContactsListScreenProps {
   uid: string;
@@ -61,6 +63,7 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
   const [sortBy, setSortBy] = useState<ContactSortBy>('name');
   const [activeTagId, setActiveTagId] = useState<string | null>(null);
   const [tagsManagerOpen, setTagsManagerOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const { tags, subscribe: subscribeTags } = useTagsStore();
 
   useEffect(() => {
@@ -90,9 +93,12 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
 
   return (
     <Box sx={{ p: 2, pb: 10 }}>
-      <Typography variant="h5" sx={{ mb: 2 }}>
-        {t('contacts.title')}
-      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+        <Typography variant="h5">{t('contacts.title')}</Typography>
+        <IconButton aria-label={t('import.menuLabel')} onClick={() => setImportOpen(true)}>
+          <UploadFileIcon fontSize="small" />
+        </IconButton>
+      </Box>
 
       {contacts.length > 0 && (
         <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
@@ -218,6 +224,8 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
       )}
 
       <TagsManagerDialog uid={uid} open={tagsManagerOpen} onClose={() => setTagsManagerOpen(false)} />
+
+      <ImportContactsDialog uid={uid} open={importOpen} onClose={() => setImportOpen(false)} />
 
       {activeContactId && (
         <ContactInteractionsDialog
