@@ -3,6 +3,7 @@ import type { Interaction, NewInteractionInput } from '@domain/interaction';
 import { validateInteraction } from '@domain/interaction';
 import {
   subscribeInteractionsForContact,
+  subscribeAllInteractions,
   createInteraction,
   deleteInteraction,
 } from '@data/interactionsRepository';
@@ -10,7 +11,9 @@ import { createLogEntry } from '@data/logsRepository';
 
 interface InteractionsState {
   byContactId: Record<string, Interaction[]>;
+  all: Interaction[];
   subscribe: (uid: string, contactId: string) => () => void;
+  subscribeAll: (uid: string) => () => void;
   add: (
     uid: string,
     input: NewInteractionInput,
@@ -21,11 +24,16 @@ interface InteractionsState {
 
 export const useInteractionsStore = create<InteractionsState>((set) => ({
   byContactId: {},
+  all: [],
 
   subscribe: (uid, contactId) => {
     return subscribeInteractionsForContact(uid, contactId, (interactions) => {
       set((state) => ({ byContactId: { ...state.byContactId, [contactId]: interactions } }));
     });
+  },
+
+  subscribeAll: (uid) => {
+    return subscribeAllInteractions(uid, (interactions) => set({ all: interactions }));
   },
 
   add: async (uid, input, contactName) => {

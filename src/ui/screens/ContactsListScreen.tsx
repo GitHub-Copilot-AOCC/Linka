@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Card,
   CardContent,
   Typography,
   Avatar,
+  Badge,
   Stack,
   Fab,
   Dialog,
@@ -19,6 +20,7 @@ import {
   MenuItem,
   ToggleButton,
   ToggleButtonGroup,
+  Tooltip,
   Chip,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
@@ -33,8 +35,10 @@ import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { useTranslation } from 'react-i18next';
 import { useContactsStore } from '@ui/store/contactsStore';
 import { useTagsStore } from '@ui/store/tagsStore';
+import { useInteractionsStore } from '@ui/store/interactionsStore';
 import type { NewContactInput, ContactSortBy } from '@domain/contact';
 import { filterContactsByKeyword, filterContactsByTag, sortContacts } from '@domain/contact';
+import { latestInteractionDateByContactId, isLongSilence, todayDateString } from '@domain/interaction';
 import { ContactInteractionsDialog } from '@ui/components/ContactInteractionsDialog';
 import { SetReminderDialog } from '@ui/components/SetReminderDialog';
 import { EditContactDialog } from '@ui/components/EditContactDialog';
@@ -68,6 +72,7 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
   const [tagsManagerOpen, setTagsManagerOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const { tags, subscribe: subscribeTags } = useTagsStore();
+  const { all: allInteractions, subscribeAll: subscribeAllInteractions } = useInteractionsStore();
 
   useEffect(() => {
     const unsubscribe = subscribe(uid);
@@ -76,10 +81,18 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
 
   useEffect(() => subscribeTags(uid), [uid, subscribeTags]);
 
+  useEffect(() => subscribeAllInteractions(uid), [uid, subscribeAllInteractions]);
+
   const visibleContacts = sortContacts(
     filterContactsByTag(filterContactsByKeyword(contacts, keyword), activeTagId),
     sortBy
   );
+
+  const latestInteractionByContact = useMemo(
+    () => latestInteractionDateByContactId(allInteractions),
+    [allInteractions]
+  );
+  const today = todayDateString();
 
   async function handleSubmit() {
     const input: NewContactInput = { name, company: company || undefined };
@@ -150,10 +163,22 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
       )}
 
       <Stack spacing={1.5}>
-        {visibleContacts.map((contact) => (
+        {visibleContacts.map((contact) => {
+          const stale = isLongSilence(latestInteractionByContact.get(contact.id), today);
+          return (
           <Card key={contact.id} variant="elevation" elevation={1}>
             <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Avatar src={contact.photos?.[0]?.url}>{contact.name.charAt(0)}</Avatar>
+              <Tooltip title={stale ? t('contacts.longSilenceWarning') : ''} disableHoverListener={!stale}>
+                <Badge
+                  color="error"
+                  variant="dot"
+                  invisible={!stale}
+                  overlap="circular"
+                  anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                >
+                  <Avatar src={contact.photos?.[0]?.url}>{contact.name.charAt(0)}</Avatar>
+                </Badge>
+              </Tooltip>
               <Box sx={{ flex: 1 }}>
                 <Typography variant="subtitle1">{contact.name}</Typography>
                 <Typography variant="body2" color="text.secondary">
@@ -191,7 +216,8 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
               </IconButton>
             </CardContent>
           </Card>
-        ))}
+          );
+        })}
       </Stack>
 
       <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={() => setMenuAnchor(null)}>

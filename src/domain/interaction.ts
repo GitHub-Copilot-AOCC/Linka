@@ -44,3 +44,32 @@ export function todayDateString(): string {
   const day = String(now.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 }
+
+/**
+ * 無互動天數門檻（見 spec.md §5.6、§11.4），v1 所有聯絡人共用同一門檻，不因星級而異。
+ * 必須跟 functions/src/index.ts 的 LONG_SILENCE_DAYS 保持一致（後端目前沒有共用套件可 import，僅能人工同步）。
+ */
+export const LONG_SILENCE_DAYS = 60;
+
+/** 依互動紀錄算出每位聯絡人最近一次互動日期，供 §11.4 列表久未聯絡色彩警示使用。 */
+export function latestInteractionDateByContactId(interactions: Interaction[]): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const interaction of interactions) {
+    for (const contactId of interaction.contactIds) {
+      const current = map.get(contactId);
+      if (!current || interaction.date > current) {
+        map.set(contactId, interaction.date);
+      }
+    }
+  }
+  return map;
+}
+
+/** 見 spec.md §5.6：僅在「有過互動但已超過門檻天數」時視為久未聯絡；從未互動過的聯絡人不計入（比照後端主動提醒規則）。 */
+export function isLongSilence(latestInteractionDate: string | undefined, todayIso: string): boolean {
+  if (!latestInteractionDate) return false;
+  const older = new Date(`${latestInteractionDate}T00:00:00.000Z`);
+  const newer = new Date(`${todayIso}T00:00:00.000Z`);
+  const days = Math.floor((newer.getTime() - older.getTime()) / 86400000);
+  return days >= LONG_SILENCE_DAYS;
+}
