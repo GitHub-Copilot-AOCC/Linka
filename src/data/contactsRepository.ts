@@ -12,7 +12,7 @@ import {
 } from 'firebase/firestore';
 import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, storage } from './firebase';
-import type { Contact, ContactPhoto, NewContactInput } from '@domain/contact';
+import type { Contact, ContactPhoto, NewContactInput, ResearchEntry } from '@domain/contact';
 import { applyContactDefaults } from '@domain/contact';
 
 // Firestore 路徑：users/{uid}/contacts/{contactId}（見 spec.md §7）
@@ -41,6 +41,7 @@ function fromFirestore(id: string, data: Record<string, unknown>): Contact {
     photos: (data.photos as Contact['photos']) ?? undefined,
     nextContactReminder: data.nextContactReminder as string | undefined,
     source: data.source as Contact['source'],
+    researchLog: (data.researchLog as Contact['researchLog']) ?? undefined,
     createdAt: toMillis(data.createdAt),
     updatedAt: toMillis(data.updatedAt),
   };
@@ -103,6 +104,19 @@ export async function uploadContactPhoto(
 
   const photo: ContactPhoto = { url, source: 'upload', addedAt: Date.now() };
   await updateContact(uid, contactId, { photos: [...existingPhotos, photo] });
+}
+
+/**
+ * 新增一筆網路身分研究摘要紀錄（見 spec.md §5.8）：一律附加到 researchLog 陣列尾端，
+ * 絕不覆蓋既有紀錄，讓使用者可回顧歷次搜尋結果隨時間的變化。
+ */
+export async function appendResearchEntry(
+  uid: string,
+  contactId: string,
+  existingLog: ResearchEntry[],
+  entry: ResearchEntry
+): Promise<void> {
+  await updateContact(uid, contactId, { researchLog: [...existingLog, entry] });
 }
 
 /** 刪除一張已上傳的聯絡人照片（Storage 檔案 + Firestore 陣列項目）。 */

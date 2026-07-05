@@ -5,6 +5,17 @@ const https_1 = require("firebase-functions/v2/https");
 const params_1 = require("firebase-functions/params");
 const generative_ai_1 = require("@google/generative-ai");
 const GEMINI_API_KEY = (0, params_1.defineSecret)("GEMINI_API_KEY");
+const GEMINI_MODEL = "gemini-3.1-flash-lite";
+const cleanAndParseJson = (text) => {
+    try {
+        const cleaned = text.replace(/```json\n?|\n?```/g, "").trim();
+        return JSON.parse(cleaned);
+    }
+    catch (e) {
+        console.error("Failed to parse JSON:", text);
+        throw new Error("Invalid JSON response from AI model");
+    }
+};
 exports.geminiProxy = (0, https_1.onRequest)({
     secrets: [GEMINI_API_KEY],
     cors: true,
@@ -32,7 +43,7 @@ exports.geminiProxy = (0, https_1.onRequest)({
                 const { chatHistory, userInput, systemPrompt } = payload;
                 console.log("Generating networking advice...");
                 const model = genAI.getGenerativeModel({
-                    model: "gemini-2.0-flash-exp",
+                    model: GEMINI_MODEL,
                     systemInstruction: systemPrompt,
                     generationConfig: {
                         responseMimeType: "application/json"
@@ -45,14 +56,14 @@ exports.geminiProxy = (0, https_1.onRequest)({
                     })).concat([{ role: 'user', parts: [{ text: userInput }] }]),
                 });
                 const text = apiResult.response.text();
-                result = JSON.parse(text);
+                result = cleanAndParseJson(text);
                 break;
             }
             case "extractContactFromCard": {
                 const { base64Data, mimeType, prompt } = payload;
                 console.log("Extracting contact from card...");
                 const model = genAI.getGenerativeModel({
-                    model: "gemini-2.0-flash-exp",
+                    model: GEMINI_MODEL,
                     generationConfig: {
                         responseMimeType: "application/json"
                     }
@@ -73,14 +84,14 @@ exports.geminiProxy = (0, https_1.onRequest)({
                         },
                     ],
                 });
-                result = JSON.parse(apiResult.response.text());
+                result = cleanAndParseJson(apiResult.response.text());
                 break;
             }
             case "getSuggestedTopics": {
                 const { prompt, systemInstruction } = payload;
                 console.log("Getting suggested topics...");
                 const model = genAI.getGenerativeModel({
-                    model: "gemini-2.0-flash-exp",
+                    model: GEMINI_MODEL,
                     systemInstruction: systemInstruction,
                     generationConfig: {
                         responseMimeType: "application/json"
@@ -89,14 +100,14 @@ exports.geminiProxy = (0, https_1.onRequest)({
                 const apiResult = await model.generateContent({
                     contents: [{ role: 'user', parts: [{ text: prompt }] }],
                 });
-                result = JSON.parse(apiResult.response.text());
+                result = cleanAndParseJson(apiResult.response.text());
                 break;
             }
             case "getProfileSummary": {
                 const { prompt, systemInstruction } = payload;
                 console.log("Getting profile summary...");
                 const model = genAI.getGenerativeModel({
-                    model: "gemini-2.0-flash-exp",
+                    model: GEMINI_MODEL,
                     systemInstruction: systemInstruction,
                     generationConfig: {
                         temperature: 0.5,
@@ -104,9 +115,47 @@ exports.geminiProxy = (0, https_1.onRequest)({
                 });
                 const apiResult = await model.generateContent({
                     contents: [{ role: 'user', parts: [{ text: prompt }] }],
-                    tools: [{ googleSearch: {} }],
                 });
                 result = apiResult.response.text();
+                break;
+            }
+            case "researchContactProfile": {
+                const { prompt, systemInstruction } = payload;
+                console.log("Researching contact profile with Google Search grounding...");
+                const model = genAI.getGenerativeModel({
+                    model: GEMINI_MODEL,
+                    systemInstruction: systemInstruction,
+                    generationConfig: {
+                        temperature: 0.3,
+                    },
+                    tools: [
+                        {
+                            googleSearchRetrieval: {},
+                        },
+                    ],
+                });
+                const apiResult = await model.generateContent({
+                    contents: [{ role: "user", parts: [{ text: prompt }] }],
+                });
+                const candidate = apiResult.response.candidates?.[0];
+                const text = apiResult.response.text();
+                const groundingChunks = candidate?.groundingMetadata?.groundingChuncks ?? [];
+                const citedUrls = groundingChunks
+                    .map((chunk) => chunk.web?.uri)
+                    .filter((uri) => typeof uri === "string" && uri.length > 0);
+                let sourceUrls = Array.from(new Set(citedUrls));
+                let citationSource = "grounding_metadata";
+                if (sourceUrls.length === 0) {
+                    const urlRegex = /https?:\/\/[^\s)\]"'>]+/g;
+                    const matches = text.match(urlRegex) ?? [];
+                    sourceUrls = Array.from(new Set(matches));
+                    citationSource = "inline_text_fallback";
+                }
+                result = {
+                    summary: text,
+                    sourceUrls,
+                    citationSource,
+                };
                 break;
             }
             default:

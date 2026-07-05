@@ -33,6 +33,7 @@ import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import TravelExploreIcon from '@mui/icons-material/TravelExplore';
 import { useTranslation } from 'react-i18next';
 import { useContactsStore } from '@ui/store/contactsStore';
 import { useTagsStore } from '@ui/store/tagsStore';
@@ -47,6 +48,7 @@ import { DeleteContactDialog } from '@ui/components/DeleteContactDialog';
 import { TagsManagerDialog } from '@ui/components/TagsManagerDialog';
 import { ImportContactsDialog } from '@ui/components/ImportContactsDialog';
 import { SuggestedTopicsDialog } from '@ui/components/SuggestedTopicsDialog';
+import { ContactResearchDialog } from '@ui/components/ContactResearchDialog';
 import { BusinessCardScanDialog } from '@ui/components/BusinessCardScanDialog';
 
 interface ContactsListScreenProps {
@@ -63,6 +65,7 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
   const [formError, setFormError] = useState<string | null>(null);
   const [activeContactId, setActiveContactId] = useState<string | null>(null);
   const [topicsContactId, setTopicsContactId] = useState<string | null>(null);
+  const [researchContactId, setResearchContactId] = useState<string | null>(null);
   const [reminderContactId, setReminderContactId] = useState<string | null>(null);
   const [editContactId, setEditContactId] = useState<string | null>(null);
   const [deleteContactId, setDeleteContactId] = useState<string | null>(null);
@@ -214,6 +217,12 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
                 <AutoAwesomeIcon fontSize="small" />
               </IconButton>
               <IconButton
+                aria-label={t('contacts.webResearch')}
+                onClick={() => setResearchContactId(contact.id)}
+              >
+                <TravelExploreIcon fontSize="small" />
+              </IconButton>
+              <IconButton
                 aria-label={t('contacts.moreActions')}
                 onClick={(e) => {
                   setMenuAnchor(e.currentTarget);
@@ -297,6 +306,15 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
           contact={contacts.find((c) => c.id === topicsContactId)!}
           open
           onClose={() => setTopicsContactId(null)}
+        />
+      )}
+
+      {researchContactId && (
+        <ContactResearchDialog
+          uid={uid}
+          contact={contacts.find((c) => c.id === researchContactId)!}
+          open
+          onClose={() => setResearchContactId(null)}
         />
       )}
 
