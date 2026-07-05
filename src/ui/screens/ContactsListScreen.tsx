@@ -23,7 +23,7 @@ import {
   Tooltip,
   Chip,
 } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import StarIcon from '@mui/icons-material/Star';
 import HistoryIcon from '@mui/icons-material/History';
 import AlarmIcon from '@mui/icons-material/Alarm';
@@ -52,6 +52,7 @@ import { SuggestedTopicsDialog } from '@ui/components/SuggestedTopicsDialog';
 import { ContactResearchDialog } from '@ui/components/ContactResearchDialog';
 import { BusinessCardScanDialog } from '@ui/components/BusinessCardScanDialog';
 import { DocumentImportDialog } from '@ui/components/DocumentImportDialog';
+import { QuickCaptureDialog } from '@ui/components/QuickCaptureDialog';
 
 interface ContactsListScreenProps {
   uid: string;
@@ -62,6 +63,7 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
   const { contacts, subscribe, add } = useContactsStore();
   const { t } = useTranslation();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [quickCaptureOpen, setQuickCaptureOpen] = useState(false);
   const [name, setName] = useState('');
   const [company, setCompany] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
@@ -117,7 +119,7 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
   }
 
   return (
-    <Box sx={{ p: 2, pb: 10 }}>
+    <Box sx={{ p: 2, pb: 14 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
         <Typography variant="h5">{t('contacts.title')}</Typography>
         <Box sx={{ display: 'flex' }}>
@@ -326,13 +328,25 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
         />
       )}
 
+      <QuickCaptureDialog uid={uid} contacts={contacts} open={quickCaptureOpen} onClose={() => setQuickCaptureOpen(false)} />
+
       <Fab
         color="primary"
         sx={{ position: 'fixed', bottom: 24, right: 24 }}
+        onClick={() => setQuickCaptureOpen(true)}
+        aria-label={t('contacts.quickCapture')}
+      >
+        <AutoAwesomeIcon />
+      </Fab>
+
+      <Fab
+        color="default"
+        size="small"
+        sx={{ position: 'fixed', bottom: 92, right: 28 }}
         onClick={() => setDialogOpen(true)}
         aria-label={t('contacts.addContact')}
       >
-        <AddIcon />
+        <PersonAddIcon fontSize="small" />
       </Fab>
 
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} fullWidth maxWidth="xs">
