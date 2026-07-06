@@ -80,6 +80,7 @@ export function SettingsScreen() {
         call: t('interactionsDialog.typeCall'),
         email: t('interactionsDialog.typeEmail'),
       },
+      deletedContactLabel: t('common.deletedContact'),
     });
   }
 

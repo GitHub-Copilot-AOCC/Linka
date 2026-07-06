@@ -154,9 +154,17 @@ const addDays = (value: Date, days: number) => {
     return next;
 };
 
+const isLeapYear = (year: number) => (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+
 const normalizeBirthdayForYear = (birthday: string, year: number) => {
-    const [, month, day] = birthday.split("-");
-    return `${year}-${month}-${day}`;
+    const [, monthStr, dayStr] = birthday.split("-");
+    const month = Number(monthStr);
+    const day = Number(dayStr);
+    // 2/29 生日在非閏年沒有對應日期；不調整的話 targetIso 永遠不會等於 "YYYY-02-29"（因為
+    // 那不是真實日曆日），導致這種生日在非閏年完全不會觸發主動提醒。比照前端 upcomingBirthdays
+    // 邏輯算在 2/28（見使用者回報的 corner case）。
+    const adjustedDay = month === 2 && day === 29 && !isLeapYear(year) ? 28 : day;
+    return `${year}-${monthStr}-${String(adjustedDay).padStart(2, "0")}`;
 };
 
 const resolveUpcomingBirthday = (birthday: string, today: Date) => {

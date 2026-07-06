@@ -62,17 +62,22 @@ export const INTERACTION_EXPORT_COLUMNS: Array<{ key: keyof InteractionExportRow
   { key: 'description', labelKey: 'interactionsDialog.description' },
 ];
 
-/** 組出互動紀錄匯出資料列；一筆互動綁定多位聯絡人時，各自展開成一列。 */
+/**
+ * 組出互動紀錄匯出資料列；一筆互動綁定多位聯絡人時，各自展開成一列。
+ * `deletedContactLabel`：互動紀錄本身不會因聯絡人被刪除而消失（見 contactsRepository.deleteContact
+ * 的說明），這裡遇到查無對應聯絡人時顯示可讀的提示文字，而不是洩漏原始 Firestore document id。
+ */
 export function buildInteractionExportRows(
   interactions: Interaction[],
-  contacts: Contact[]
+  contacts: Contact[],
+  deletedContactLabel: string
 ): InteractionExportRow[] {
   const nameLookup = new Map(contacts.map((contact) => [contact.id, contact.name]));
   const rows: InteractionExportRow[] = [];
   for (const interaction of interactions) {
     for (const contactId of interaction.contactIds) {
       rows.push({
-        contactName: nameLookup.get(contactId) ?? contactId,
+        contactName: nameLookup.get(contactId) ?? deletedContactLabel,
         type: interaction.type,
         date: interaction.date,
         description: interaction.description,

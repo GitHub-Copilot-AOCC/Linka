@@ -6,7 +6,8 @@
     "delete": "Delete",
     "close": "Close",
     "add": "Add",
-    "back": "Back"
+    "back": "Back",
+    "deletedContact": "Deleted contact"
   },
   "contactDetail": {
     "notFound": "Contact not found",
@@ -75,7 +76,8 @@
     "addContact": "Add contact",
     "quickCapture": "AI quick capture",
     "name": "Name",
-    "company": "Company"
+    "company": "Company",
+    "duplicateNameWarning": "There's already a contact named \"{{name}}\" — is this the same person?"
   },
   "editContact": {
     "title": "Edit {{name}}",

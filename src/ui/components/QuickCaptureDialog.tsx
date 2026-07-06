@@ -337,9 +337,15 @@ export function QuickCaptureDialog({ uid, contacts, open, onClose }: QuickCaptur
                       <Box key={match.referenceId}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
                           <Chip label={match.confidence} size="small" color={match.confidence === 'high' ? 'success' : 'default'} />
-                          {match.matchedContactIds.map((contactId) => (
-                            <Chip key={contactId} label={contactLookup.get(contactId)?.name ?? contactId} size="small" />
-                          ))}
+                          {match.matchedContactIds.map((contactId) => {
+                            const matchedContact = contactLookup.get(contactId);
+                            // 同名聯絡人在此顯示公司名輔助辨識，避免使用者無法確認 AI 到底比對到哪一位
+                            // （見使用者回報的 corner case：AI 比對邏輯主要靠名字字串，可能選錯同名的人）。
+                            const label = matchedContact
+                              ? [matchedContact.name, matchedContact.company].filter(Boolean).join(' · ')
+                              : t('common.deletedContact');
+                            return <Chip key={contactId} label={label} size="small" />;
+                          })}
                           {match.suggestedNewContactName && (
                             <Chip
                               label={t('quickCapture.newContactChip', { name: match.suggestedNewContactName })}

@@ -41,7 +41,7 @@ import { useContactsStore } from '@ui/store/contactsStore';
 import { useTagsStore } from '@ui/store/tagsStore';
 import { useInteractionsStore } from '@ui/store/interactionsStore';
 import type { NewContactInput, ContactSortBy } from '@domain/contact';
-import { filterContactsByKeyword, filterContactsByTag, sortContacts } from '@domain/contact';
+import { filterContactsByKeyword, filterContactsByTag, findContactsByName, sortContacts } from '@domain/contact';
 import { latestInteractionDateByContactId, isLongSilence, todayDateString } from '@domain/interaction';
 import { ContactInteractionsDialog } from '@ui/components/ContactInteractionsDialog';
 import { SetReminderDialog } from '@ui/components/SetReminderDialog';
@@ -108,6 +108,8 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
     [allInteractions]
   );
   const today = todayDateString();
+
+  const duplicateNameMatches = useMemo(() => findContactsByName(contacts, name), [contacts, name]);
 
   async function handleSubmit() {
     const input: NewContactInput = {
@@ -391,6 +393,11 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
             value={company}
             onChange={(e) => setCompany(e.target.value)}
           />
+          {duplicateNameMatches.length > 0 && (
+            <Alert severity="warning" sx={{ mt: 1 }}>
+              {t('contacts.duplicateNameWarning', { name })}
+            </Alert>
+          )}
           <Typography variant="body2" sx={{ mt: 2, mb: 1 }}>
             {t('editContact.tags')}
           </Typography>

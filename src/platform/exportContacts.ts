@@ -15,6 +15,7 @@ interface ExportSheetLabels {
   contactsSheetName: string;
   interactionsSheetName: string;
   interactionTypeLabels: Record<Interaction['type'], string>;
+  deletedContactLabel: string;
 }
 
 /**
@@ -28,7 +29,7 @@ export function exportContactsToExcel(
   labels: ExportSheetLabels
 ): void {
   const contactRows = buildContactExportRows(contacts, tags);
-  const interactionRows = buildInteractionExportRows(interactions, contacts);
+  const interactionRows = buildInteractionExportRows(interactions, contacts, labels.deletedContactLabel);
 
   const contactSheet = XLSX.utils.aoa_to_sheet([
     labels.contactColumnLabels,

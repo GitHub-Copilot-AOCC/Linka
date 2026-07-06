@@ -116,6 +116,17 @@ export function filterContactsByKeyword(contacts: Contact[], keyword: string): C
   );
 }
 
+/**
+ * 找出姓名完全相同（去除前後空白、不分大小寫）的既有聯絡人，供新增聯絡人時提醒使用者
+ * 「已經有同名的人了，是同一位嗎？」（見使用者回報的 corner case）。刻意只警示不擋，
+ * 因為真的同名同姓的不同人是合理情境（vCard/文件匯入的重複偵測則額外比對電話/Email）。
+ */
+export function findContactsByName(contacts: Contact[], name: string): Contact[] {
+  const trimmed = name.trim().toLowerCase();
+  if (!trimmed) return [];
+  return contacts.filter((c) => c.name.trim().toLowerCase() === trimmed);
+}
+
 /** 依社交圈標籤篩選（見 spec.md §5.2）。tagId 為 null/undefined 時不篩選。 */
 export function filterContactsByTag(contacts: Contact[], tagId: string | null): Contact[] {
   if (!tagId) return contacts;
@@ -142,6 +153,19 @@ export interface UpcomingBirthday {
   daysUntil: number;
 }
 
+function isLeapYear(year: number): boolean {
+  return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+}
+
+/**
+ * 2/29 生日在非閏年沒有對應日期，比照常見慣例算在 2/28（見使用者回報的 corner case：
+ * 原本直接丟給 Date.UTC 會溢位變成 3/1，讓提醒日期整整差一天）。
+ */
+function resolveBirthdayDateInYear(month: number, day: number, year: number): Date {
+  const adjustedDay = month === 2 && day === 29 && !isLeapYear(year) ? 28 : day;
+  return new Date(Date.UTC(year, month - 1, adjustedDay));
+}
+
 /**
  * 未來 windowDays 天內（含今天）即將到來的生日，供首頁唯讀預覽清單使用。
  * 與 §5.6 AI 主動提醒（生日前 3 天才建立建議）是分開的兩個功能，這裡是範圍更廣的預覽。
@@ -153,9 +177,9 @@ export function upcomingBirthdays(contacts: Contact[], todayIso: string, windowD
   for (const contact of contacts) {
     if (!contact.birthday) continue;
     const [, month, day] = contact.birthday.split('-').map(Number);
-    let next = new Date(Date.UTC(today.getUTCFullYear(), month - 1, day));
+    let next = resolveBirthdayDateInYear(month, day, today.getUTCFullYear());
     if (next.getTime() < today.getTime()) {
-      next = new Date(Date.UTC(today.getUTCFullYear() + 1, month - 1, day));
+      next = resolveBirthdayDateInYear(month, day, today.getUTCFullYear() + 1);
     }
     const daysUntil = Math.round((next.getTime() - today.getTime()) / 86400000);
     if (daysUntil <= windowDays) {

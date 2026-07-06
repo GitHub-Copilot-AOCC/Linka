@@ -18,6 +18,7 @@ import { useContactsStore } from '@ui/store/contactsStore';
 import { compressImage } from '@platform/imageCompression';
 import { scanBusinessCard, GeminiServiceError } from '@services/geminiService';
 import type { BusinessCardFields } from '@domain/businessCard';
+import { findContactsByName } from '@domain/contact';
 
 interface BusinessCardScanDialogProps {
   uid: string;
@@ -44,7 +45,7 @@ function blobToBase64(blob: Blob): Promise<string> {
 /** 名片 OCR（見 spec.md §5.5 項目1）：拍照/上傳 → AI 辨識 → 預覽確認 → 建立聯絡人，未確認前不寫入。 */
 export function BusinessCardScanDialog({ uid, open, onClose }: BusinessCardScanDialogProps) {
   const { t } = useTranslation();
-  const { add } = useContactsStore();
+  const { add, contacts } = useContactsStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [fields, setFields] = useState<BusinessCardFields | null>(null);
@@ -202,6 +203,11 @@ export function BusinessCardScanDialog({ uid, open, onClose }: BusinessCardScanD
               value={fields.email ?? ''}
               onChange={(e) => updateField('email', e.target.value)}
             />
+            {findContactsByName(contacts, fields.name).length > 0 && (
+              <Alert severity="warning" sx={{ mt: 1 }}>
+                {t('contacts.duplicateNameWarning', { name: fields.name })}
+              </Alert>
+            )}
           </Box>
         )}
       </DialogContent>

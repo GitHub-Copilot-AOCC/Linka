@@ -6,7 +6,8 @@
     "delete": "刪除",
     "close": "關閉",
     "add": "新增",
-    "back": "返回"
+    "back": "返回",
+    "deletedContact": "已刪除的聯絡人"
   },
   "contactDetail": {
     "notFound": "找不到這位聯絡人",
@@ -75,7 +76,8 @@
     "addContact": "新增聯絡人",
     "quickCapture": "AI 快速記錄",
     "name": "姓名",
-    "company": "公司"
+    "company": "公司",
+    "duplicateNameWarning": "已經有一位「{{name}}」了，確定不是同一個人嗎？"
   },
   "editContact": {
     "title": "編輯 {{name}}",

@@ -38,7 +38,7 @@ export function RecentInteractionsPanel({ uid }: RecentInteractionsPanelProps) {
             <Box key={interaction.id}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
                 {interaction.contactIds.map((id) => (
-                  <Chip key={id} label={contactLookup.get(id) ?? id} size="small" />
+                  <Chip key={id} label={contactLookup.get(id) ?? t('common.deletedContact')} size="small" />
                 ))}
                 <Typography variant="caption" color="text.secondary">
                   {typeLabel[interaction.type]} · {interaction.date}
