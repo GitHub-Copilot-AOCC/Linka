@@ -5,6 +5,18 @@
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <title>Linka</title>
+    <style>
+        /*
+          關閉 iOS WebKit（Safari / Chrome for iOS，底層都是 WebKit）的自動文字縮放。
+          這個瀏覽器內建行為會依畫面上的文字密度/行數，自動放大或縮小某些文字區塊，
+          跟我們設定的字體大小完全無關，導致同一批卡片在篩選前後（畫面文字行數不同）
+          看起來字體大小不一致（見使用者回報）。明確關掉後字體大小永遠照 CSS 設定顯示。
+        */
+        html {
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+        }
+    </style>
 </head>
 
 <body>
