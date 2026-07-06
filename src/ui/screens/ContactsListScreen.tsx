@@ -54,6 +54,7 @@ import { ContactResearchDialog } from '@ui/components/ContactResearchDialog';
 import { BusinessCardScanDialog } from '@ui/components/BusinessCardScanDialog';
 import { DocumentImportDialog } from '@ui/components/DocumentImportDialog';
 import { QuickCaptureDialog } from '@ui/components/QuickCaptureDialog';
+import { TagMultiSelect } from '@ui/components/TagMultiSelect';
 
 interface ContactsListScreenProps {
   uid: string;
@@ -68,6 +69,7 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
   const [quickCaptureOpen, setQuickCaptureOpen] = useState(false);
   const [name, setName] = useState('');
   const [company, setCompany] = useState('');
+  const [newContactTagIds, setNewContactTagIds] = useState<string[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
   const [activeContactId, setActiveContactId] = useState<string | null>(null);
   const [topicsContactId, setTopicsContactId] = useState<string | null>(null);
@@ -108,11 +110,16 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
   const today = todayDateString();
 
   async function handleSubmit() {
-    const input: NewContactInput = { name, company: company || undefined };
+    const input: NewContactInput = {
+      name,
+      company: company || undefined,
+      tags: newContactTagIds.length > 0 ? newContactTagIds : undefined,
+    };
     const result = await add(uid, input);
     if (result.ok) {
       setName('');
       setCompany('');
+      setNewContactTagIds([]);
       setFormError(null);
       setDialogOpen(false);
     } else {
@@ -356,7 +363,16 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
         <PersonAddIcon fontSize="small" />
       </Fab>
 
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} fullWidth maxWidth="xs">
+      <Dialog
+        open={dialogOpen}
+        onClose={() => {
+          setDialogOpen(false);
+          setNewContactTagIds([]);
+          setFormError(null);
+        }}
+        fullWidth
+        maxWidth="xs"
+      >
         <DialogTitle>{t('contacts.addContact')}</DialogTitle>
         <DialogContent>
           {formError && <Alert severity="error" sx={{ mb: 2 }}>{formError}</Alert>}
@@ -375,9 +391,21 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
             value={company}
             onChange={(e) => setCompany(e.target.value)}
           />
+          <Typography variant="body2" sx={{ mt: 2, mb: 1 }}>
+            {t('editContact.tags')}
+          </Typography>
+          <TagMultiSelect uid={uid} selectedIds={newContactTagIds} onChange={setNewContactTagIds} />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>{t('common.cancel')}</Button>
+          <Button
+            onClick={() => {
+              setDialogOpen(false);
+              setNewContactTagIds([]);
+              setFormError(null);
+            }}
+          >
+            {t('common.cancel')}
+          </Button>
           <Button onClick={handleSubmit} variant="contained">
             {t('common.add')}
           </Button>

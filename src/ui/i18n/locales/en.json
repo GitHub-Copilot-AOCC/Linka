@@ -45,7 +45,12 @@
   },
   "dashboard": {
     "title": "Home",
-    "noReminders": "Nothing to follow up on today."
+    "noReminders": "Nothing to follow up on today.",
+    "upcomingBirthdaysTitle": "Upcoming birthdays",
+    "birthdayToday": "Birthday today!",
+    "daysUntilBirthday": "in {{days}} days",
+    "recentContactsTitle": "Recently added contacts",
+    "recentInteractionsTitle": "Recent interactions"
   },
   "reminders": {
     "title": "People to contact today",
@@ -107,7 +112,8 @@
   },
   "tags": {
     "title": "Manage tags",
-    "newTagLabel": "New tag name"
+    "newTagLabel": "New tag name",
+    "addInline": "Add tag"
   },
   "operationLog": {
     "title": "Activity log",
@@ -123,7 +129,15 @@
     "operationLog": "Activity log",
     "view": "View",
     "logout": "Log out",
-    "language": "Language"
+    "language": "Language",
+    "exportContacts": "Data export",
+    "exportDescription": "Export contacts and interactions as an Excel file",
+    "exportButton": "Download Excel"
+  },
+  "export": {
+    "sheetContacts": "Contacts",
+    "sheetInteractions": "Interactions",
+    "colContactName": "Contact"
   },
   "syncStatus": {
     "offline": "Offline",

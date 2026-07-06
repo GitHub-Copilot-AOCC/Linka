@@ -6,7 +6,6 @@ import {
   Rating,
   Box,
   Typography,
-  Chip,
   Avatar,
   IconButton,
   CircularProgress,
@@ -16,11 +15,11 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
 import { useTranslation } from 'react-i18next';
 import { useContactsStore } from '@ui/store/contactsStore';
-import { useTagsStore } from '@ui/store/tagsStore';
 import { validateContact, MAX_PHOTOS_PER_CONTACT } from '@domain/contact';
 import type { Contact, ContactPhoto } from '@domain/contact';
 import { compressImage } from '@platform/imageCompression';
 import { uploadContactPhoto, removeContactPhoto } from '@data/contactsRepository';
+import { TagMultiSelect } from '@ui/components/TagMultiSelect';
 
 interface ContactBasicInfoPanelProps {
   uid: string;
@@ -51,13 +50,8 @@ export function ContactBasicInfoPanel({ uid, contact, active }: ContactBasicInfo
   const [uploading, setUploading] = useState(false);
   const [saved, setSaved] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { tags, subscribe } = useTagsStore();
   const contacts = useContactsStore((s) => s.contacts);
   const livePhotos = contacts.find((c) => c.id === contact.id)?.photos ?? contact.photos ?? [];
-
-  useEffect(() => {
-    if (active) subscribe(uid);
-  }, [uid, active, subscribe]);
 
   // 切換聯絡人（例如從列表點進不同人）時，表單需要重新以該聯絡人的資料初始化。
   useEffect(() => {
@@ -99,10 +93,6 @@ export function ContactBasicInfoPanel({ uid, contact, active }: ContactBasicInfo
 
   async function handleRemovePhoto(photo: ContactPhoto) {
     await removeContactPhoto(uid, contact.id, photo, livePhotos);
-  }
-
-  function toggleTag(tagId: string) {
-    setTagIds((ids) => (ids.includes(tagId) ? ids.filter((id) => id !== tagId) : [...ids, tagId]));
   }
 
   function field(key: keyof typeof form) {
@@ -193,16 +183,8 @@ export function ContactBasicInfoPanel({ uid, contact, active }: ContactBasicInfo
       <Typography variant="body2" sx={{ mt: 2, mb: 1 }}>
         {t('editContact.tags')}
       </Typography>
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-        {tags.map((tag) => (
-          <Chip
-            key={tag.id}
-            label={tag.name}
-            onClick={() => toggleTag(tag.id)}
-            color={tagIds.includes(tag.id) ? 'primary' : 'default'}
-            variant={tagIds.includes(tag.id) ? 'filled' : 'outlined'}
-          />
-        ))}
+      <Box sx={{ mb: 2 }}>
+        <TagMultiSelect uid={uid} selectedIds={tagIds} onChange={setTagIds} />
       </Box>
 
       <Button onClick={handleSave} variant="contained">

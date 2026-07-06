@@ -3,7 +3,7 @@
 > 對照 [spec.md](spec.md)。狀態以本檔案最後更新時間為準，開發過程中請隨手更新，避免重演舊版「文件落後程式碼」的問題（見 spec.md 附錄）。
 > 最後更新：2026-07-06
 
-**這輪功能開發到此為止**：使用者已明確表示 §11.5、§11.6 做完後，其餘待完成項目（見下方「⏳ 待完成」表格：Google 聯絡人 API 匯入、Stripe、AI 額度後端執行、§5.8 研究摘要重試、§5.8 照片搜尋）全部延後到日後有需要再處理，這份清單之後不會主動繼續動工。
+**§11.5/§11.6 後曾表示開發到此為止**，之後使用者又提出三項新需求（標籤複選＋隨時新增、Excel 匯出、首頁近況摘要），已完成見下方表格。其餘「⏳ 待完成」項目（Google 聯絡人 API 匯入、Stripe、AI 額度後端執行、§5.8 研究摘要重試、§5.8 照片搜尋）維持延後，不主動動工。
 
 ---
 
@@ -40,6 +40,9 @@
 | §5.8 | 網路身分研究摘要（僅文字子功能） | 新增 `researchContactProfile` action，使用 Gemini `googleSearchRetrieval` grounding 工具（已對照實際安裝的 SDK 型別定義確認正確語法，非猜測）；新增 `Contact.researchLog`、`ContactResearchDialog.tsx`。**照片搜尋子功能明確不做**（需要額外圖片搜尋 API 憑證）。**實測卡在 Gemini API 429 Too Many Requests**（`googleSearchRetrieval` grounding 工具疑似有獨立於一般文字生成的配額限制，這個 session 已經打了很多次一般 API 但這是第一次用到 grounding 工具就被擋）；錯誤處理本身正確運作（優雅顯示錯誤訊息，未 crash），但**尚未看過成功產生摘要的真實案例**，需要之後確認 Google Cloud Console 的 billing/quota 設定或换個時間點重試 |
 | §11.5 | 聯絡人詳情 Material Tabs 頁 | 新增 `ContactDetailScreen.tsx`（路由 `/contacts/:contactId`），以「基本資料／互動紀錄／網路研究摘要」三個 Tab 取代原本全部塞在 Dialog 的做法；三個既有 Dialog（`EditContactDialog`/`ContactInteractionsDialog`/`ContactResearchDialog`）的內容抽成可重用的 Panel 元件（`ContactBasicInfoPanel`/`ContactInteractionsPanel`/`ContactResearchPanel`），Dialog 改為薄包裝，維持列表頁原本的快速存取圖示按鈕不變。各 Tab 內容只在啟用時掛載（lazy load）。列表頁點擊聯絡人姓名/頭像區域會導到新的詳情頁（獨立於原本的圖示按鈕，不互相干擾）。**已在真實瀏覽器端到端測過**：從列表點進王小明的詳情頁，三個 Tab 都能正確切換渲染；在「基本資料」修改後按儲存，確認 Firestore 寫入完成後正確跳出「已儲存」提示；返回按鈕正確回到列表頁，列表頁原本的圖示按鈕互動不受影響 |
 | §11.6 | AI 卡片 Assist Chip 統一 | 把 `AISuggestionsPanel.tsx`（首頁「今天需要處理」）的採納/修改/忽略三個一般 `Button` 改成帶圖示的 `Chip`（MUI Assist Chip 樣式：可點擊、圓角、小尺寸）。**範圍刻意限定在這個元件**：只有這裡是真正的「三選一操作列」語意，符合 spec §11.6 字面定義；`SuggestedTopicsDialog`（純唯讀建議、無操作列）、`QuickCaptureDialog`（Checkbox 是合法的多選語意，換成 Chip 反而是體驗倒退）、`AssistantChatScreen`（既有的引用 Chip 是資訊展示不是操作）都刻意不動，避免為了湊字面規格硬造假操作。**已在真實瀏覽器驗證**：暫時注入一筆假建議資料觸發面板渲染，確認三個 Chip（採納/修改/忽略）樣式正確且點擊互動正常（點「修改」正確跳出調整對話框），驗證完已還原注入程式碼，並重新跑過 type-check + build 確認乾淨 |
+| 使用者需求 | 標籤複選 + 隨時新增 | 標籤原本就支援複選（`Contact.tags: string[]`）與隨時管理（`TagsManagerDialog`），但只有編輯聯絡人時能選標籤，新增聯絡人當下無法選。新增共用元件 `TagMultiSelect.tsx`（複選 Chip + 內嵌「+ 新增標籤」輸入框，建立後即時可選，因為 `useTagsStore` 本來就是 Firestore `onSnapshot` 即時訂閱），接進 `ContactBasicInfoPanel`（取代原本重複的 Chip 邏輯）與 `ContactsListScreen` 的「新增聯絡人」快速對話框。**已在真實瀏覽器端到端測過**：在編輯表單用內嵌輸入框新建一個「好朋友」標籤，立即出現在選項中可勾選、存檔成功；在新增聯絡人對話框勾選既有的「VIP」標籤，新增後用標籤篩選確認該聯絡人正確被分類 |
+| 使用者需求 | 聯絡人資料庫 Excel 匯出 | 新增前端 `xlsx`（SheetJS，與 `functions/` 既有版本 `^0.18.5` 一致）依賴；新增 `src/domain/contactExport.ts`（純資料轉換：聯絡人/互動紀錄轉表格列，標籤 id 轉可讀名稱，欄位標題沿用既有 i18n key 避免重複翻譯維護）、`src/platform/exportContacts.ts`（用 SheetJS 產生兩個工作表「聯絡人」「互動紀錄」並觸發瀏覽器下載）。接在設定頁新增「資料匯出」區塊。**已驗證**：真實瀏覽器點擊下載按鈕無任何 console 錯誤（含有一筆真實互動紀錄的情況下也正常）；另外直接呼叫 domain 層轉換函式餵入樣本資料，確認輸出欄位順序與內容正確（標籤 id 正確轉換成「好朋友」等可讀名稱） |
+| 使用者需求 | 首頁近況摘要 | 新增三個唯讀首頁面板（放在既有 AI 建議/手動提醒之後）：`UpcomingBirthdaysPanel`（未來 14 天內生日，與 §5.6 AI 建議的「生日前 3 天」主動提醒是分開的兩個功能）、`RecentContactsPanel`（依 `createdAt` 新到舊取前 5 筆，點擊可導到 §11.5 聯絡人詳情頁）、`RecentInteractionsPanel`（依日期新到舊取前 5 筆互動）。三者皆為「沒有資料就不顯示」，不會在空清單時佔版面。**已在真實瀏覽器端到端測過**：新增聯絡人後首頁正確顯示在「最近新增的聯絡人」最上方，點擊頭像正確導到詳情頁；新增一筆互動後「最近的互動紀錄」正確顯示聯絡人晶片/類型/日期/描述 |
 
 ---
 

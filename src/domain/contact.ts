@@ -131,3 +131,37 @@ export function sortContacts(contacts: Contact[], sortBy: ContactSortBy): Contac
   }
   return [...contacts].sort((a, b) => a.name.localeCompare(b.name));
 }
+
+/** 依建立時間新到舊排序，取前 limit 筆，供首頁「最近新增的聯絡人」使用。 */
+export function recentContacts(contacts: Contact[], limit = 5): Contact[] {
+  return [...contacts].sort((a, b) => b.createdAt - a.createdAt).slice(0, limit);
+}
+
+export interface UpcomingBirthday {
+  contact: Contact;
+  daysUntil: number;
+}
+
+/**
+ * 未來 windowDays 天內（含今天）即將到來的生日，供首頁唯讀預覽清單使用。
+ * 與 §5.6 AI 主動提醒（生日前 3 天才建立建議）是分開的兩個功能，這裡是範圍更廣的預覽。
+ */
+export function upcomingBirthdays(contacts: Contact[], todayIso: string, windowDays = 14): UpcomingBirthday[] {
+  const today = new Date(`${todayIso}T00:00:00.000Z`);
+  const result: UpcomingBirthday[] = [];
+
+  for (const contact of contacts) {
+    if (!contact.birthday) continue;
+    const [, month, day] = contact.birthday.split('-').map(Number);
+    let next = new Date(Date.UTC(today.getUTCFullYear(), month - 1, day));
+    if (next.getTime() < today.getTime()) {
+      next = new Date(Date.UTC(today.getUTCFullYear() + 1, month - 1, day));
+    }
+    const daysUntil = Math.round((next.getTime() - today.getTime()) / 86400000);
+    if (daysUntil <= windowDays) {
+      result.push({ contact, daysUntil });
+    }
+  }
+
+  return result.sort((a, b) => a.daysUntil - b.daysUntil);
+}

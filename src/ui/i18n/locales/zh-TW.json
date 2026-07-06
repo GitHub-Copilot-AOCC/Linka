@@ -45,7 +45,12 @@
   },
   "dashboard": {
     "title": "首頁",
-    "noReminders": "今天沒有需要處理的提醒。"
+    "noReminders": "今天沒有需要處理的提醒。",
+    "upcomingBirthdaysTitle": "即將到來的生日",
+    "birthdayToday": "今天生日！",
+    "daysUntilBirthday": "{{days}} 天後",
+    "recentContactsTitle": "最近新增的聯絡人",
+    "recentInteractionsTitle": "最近的互動紀錄"
   },
   "reminders": {
     "title": "今天該聯絡的人",
@@ -107,7 +112,8 @@
   },
   "tags": {
     "title": "標籤管理",
-    "newTagLabel": "新標籤名稱"
+    "newTagLabel": "新標籤名稱",
+    "addInline": "新增標籤"
   },
   "operationLog": {
     "title": "操作歷史",
@@ -123,7 +129,15 @@
     "operationLog": "操作歷史",
     "view": "查看",
     "logout": "登出",
-    "language": "語言"
+    "language": "語言",
+    "exportContacts": "資料匯出",
+    "exportDescription": "匯出聯絡人與互動紀錄成 Excel 檔案",
+    "exportButton": "下載 Excel"
+  },
+  "export": {
+    "sheetContacts": "聯絡人",
+    "sheetInteractions": "互動紀錄",
+    "colContactName": "聯絡人"
   },
   "syncStatus": {
     "offline": "離線中",
