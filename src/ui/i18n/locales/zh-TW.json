@@ -2,9 +2,17 @@
   "common": {
     "cancel": "取消",
     "save": "儲存",
+    "saved": "已儲存",
     "delete": "刪除",
     "close": "關閉",
-    "add": "新增"
+    "add": "新增",
+    "back": "返回"
+  },
+  "contactDetail": {
+    "notFound": "找不到這位聯絡人",
+    "tabBasic": "基本資料",
+    "tabInteractions": "互動紀錄",
+    "tabResearch": "網路研究摘要"
   },
   "firebaseNotConfigured": {
     "title": "Firebase 未設定",

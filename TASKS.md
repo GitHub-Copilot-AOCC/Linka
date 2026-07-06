@@ -1,7 +1,9 @@
 # Linka 開發任務清單
 
 > 對照 [spec.md](spec.md)。狀態以本檔案最後更新時間為準，開發過程中請隨手更新，避免重演舊版「文件落後程式碼」的問題（見 spec.md 附錄）。
-> 最後更新：2026-07-05
+> 最後更新：2026-07-06
+
+**這輪功能開發到此為止**：使用者已明確表示 §11.5、§11.6 做完後，其餘待完成項目（見下方「⏳ 待完成」表格：Google 聯絡人 API 匯入、Stripe、AI 額度後端執行、§5.8 研究摘要重試、§5.8 照片搜尋）全部延後到日後有需要再處理，這份清單之後不會主動繼續動工。
 
 ---
 
@@ -36,6 +38,8 @@
 | §5.5a | AI 問答秘書（聊天） | 三個 agent 平行在獨立 git worktree 開發完成（`planContactQuery`「先查詢」+ `answerContactQuestion`「後生成」二階段設計），新增 `src/domain/assistantChat.ts`、`AssistantChatScreen.tsx`，接進導覽（`/assistant` 路由）。**已在真實瀏覽器測過**：問「我認識哪些在 Google 工作的人？」正確回答並附上聯絡人引用晶片 |
 | §5.7 | 文件通訊錄批次匯入 | 新增 `parseContactDocument` action（`functions/package.json` 加 `pdf-parse`/`mammoth`/`xlsx`），新增 `src/domain/documentImport.ts`、`DocumentImportDialog.tsx`。開發時已手刻 CSV/XLSX/DOCX/PDF 四種測試檔案追蹤解析邏輯確認正確。**已在真實瀏覽器端到端測過**：上傳一份含 2 筆聯絡人的 CSV，AI 100% 正確解析姓名/職稱/公司/電話/Email，預覽確認後正確批次寫入 Firestore |
 | §5.8 | 網路身分研究摘要（僅文字子功能） | 新增 `researchContactProfile` action，使用 Gemini `googleSearchRetrieval` grounding 工具（已對照實際安裝的 SDK 型別定義確認正確語法，非猜測）；新增 `Contact.researchLog`、`ContactResearchDialog.tsx`。**照片搜尋子功能明確不做**（需要額外圖片搜尋 API 憑證）。**實測卡在 Gemini API 429 Too Many Requests**（`googleSearchRetrieval` grounding 工具疑似有獨立於一般文字生成的配額限制，這個 session 已經打了很多次一般 API 但這是第一次用到 grounding 工具就被擋）；錯誤處理本身正確運作（優雅顯示錯誤訊息，未 crash），但**尚未看過成功產生摘要的真實案例**，需要之後確認 Google Cloud Console 的 billing/quota 設定或换個時間點重試 |
+| §11.5 | 聯絡人詳情 Material Tabs 頁 | 新增 `ContactDetailScreen.tsx`（路由 `/contacts/:contactId`），以「基本資料／互動紀錄／網路研究摘要」三個 Tab 取代原本全部塞在 Dialog 的做法；三個既有 Dialog（`EditContactDialog`/`ContactInteractionsDialog`/`ContactResearchDialog`）的內容抽成可重用的 Panel 元件（`ContactBasicInfoPanel`/`ContactInteractionsPanel`/`ContactResearchPanel`），Dialog 改為薄包裝，維持列表頁原本的快速存取圖示按鈕不變。各 Tab 內容只在啟用時掛載（lazy load）。列表頁點擊聯絡人姓名/頭像區域會導到新的詳情頁（獨立於原本的圖示按鈕，不互相干擾）。**已在真實瀏覽器端到端測過**：從列表點進王小明的詳情頁，三個 Tab 都能正確切換渲染；在「基本資料」修改後按儲存，確認 Firestore 寫入完成後正確跳出「已儲存」提示；返回按鈕正確回到列表頁，列表頁原本的圖示按鈕互動不受影響 |
+| §11.6 | AI 卡片 Assist Chip 統一 | 把 `AISuggestionsPanel.tsx`（首頁「今天需要處理」）的採納/修改/忽略三個一般 `Button` 改成帶圖示的 `Chip`（MUI Assist Chip 樣式：可點擊、圓角、小尺寸）。**範圍刻意限定在這個元件**：只有這裡是真正的「三選一操作列」語意，符合 spec §11.6 字面定義；`SuggestedTopicsDialog`（純唯讀建議、無操作列）、`QuickCaptureDialog`（Checkbox 是合法的多選語意，換成 Chip 反而是體驗倒退）、`AssistantChatScreen`（既有的引用 Chip 是資訊展示不是操作）都刻意不動，避免為了湊字面規格硬造假操作。**已在真實瀏覽器驗證**：暫時注入一筆假建議資料觸發面板渲染，確認三個 Chip（採納/修改/忽略）樣式正確且點擊互動正常（點「修改」正確跳出調整對話框），驗證完已還原注入程式碼，並重新跑過 type-check + build 確認乾淨 |
 
 ---
 

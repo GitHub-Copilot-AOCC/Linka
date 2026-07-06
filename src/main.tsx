@@ -7,6 +7,7 @@ import '@ui/i18n';
 import { theme } from '@ui/theme/theme';
 import { DashboardScreen } from '@ui/screens/DashboardScreen';
 import { ContactsListScreen } from '@ui/screens/ContactsListScreen';
+import { ContactDetailScreen } from '@ui/screens/ContactDetailScreen';
 import { AssistantChatScreen } from '@ui/screens/AssistantChatScreen';
 import { SettingsScreen } from '@ui/screens/SettingsScreen';
 import { LoginScreen } from '@ui/screens/LoginScreen';
@@ -20,6 +21,12 @@ function ContactsRoute() {
   const user = useAuthStore((s) => s.user);
   if (!user) return null;
   return <ContactsListScreen uid={user.uid} />;
+}
+
+function ContactDetailRoute() {
+  const user = useAuthStore((s) => s.user);
+  if (!user) return null;
+  return <ContactDetailScreen uid={user.uid} />;
 }
 
 // v1 重寫的新進入點。帳號系統見 spec.md §5.1：Email/密碼 + Google OAuth，取代先前開發階段的匿名登入暫時做法。
@@ -63,6 +70,16 @@ function App() {
             <ProtectedRoute>
               <NavShell>
                 <ContactsRoute />
+              </NavShell>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/contacts/:contactId"
+          element={
+            <ProtectedRoute>
+              <NavShell>
+                <ContactDetailRoute />
               </NavShell>
             </ProtectedRoute>
           }

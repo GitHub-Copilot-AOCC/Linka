@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Card,
@@ -62,6 +63,7 @@ interface ContactsListScreenProps {
 export function ContactsListScreen({ uid }: ContactsListScreenProps) {
   const { contacts, subscribe, add } = useContactsStore();
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [quickCaptureOpen, setQuickCaptureOpen] = useState(false);
   const [name, setName] = useState('');
@@ -187,22 +189,27 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
           return (
           <Card key={contact.id} variant="elevation" elevation={1}>
             <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Tooltip title={stale ? t('contacts.longSilenceWarning') : ''} disableHoverListener={!stale}>
-                <Badge
-                  color="error"
-                  variant="dot"
-                  invisible={!stale}
-                  overlap="circular"
-                  anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                >
-                  <Avatar src={contact.photos?.[0]?.url}>{contact.name.charAt(0)}</Avatar>
-                </Badge>
-              </Tooltip>
-              <Box sx={{ flex: 1 }}>
-                <Typography variant="subtitle1">{contact.name}</Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {[contact.role, contact.company].filter(Boolean).join(' · ') || ' '}
-                </Typography>
+              <Box
+                sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1, cursor: 'pointer', minWidth: 0 }}
+                onClick={() => navigate(`/contacts/${contact.id}`)}
+              >
+                <Tooltip title={stale ? t('contacts.longSilenceWarning') : ''} disableHoverListener={!stale}>
+                  <Badge
+                    color="error"
+                    variant="dot"
+                    invisible={!stale}
+                    overlap="circular"
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                  >
+                    <Avatar src={contact.photos?.[0]?.url}>{contact.name.charAt(0)}</Avatar>
+                  </Badge>
+                </Tooltip>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography variant="subtitle1">{contact.name}</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {[contact.role, contact.company].filter(Boolean).join(' · ') || ' '}
+                  </Typography>
+                </Box>
               </Box>
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
                 <StarIcon fontSize="small" color={contact.importance >= 4 ? 'warning' : 'disabled'} />
