@@ -197,9 +197,18 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
           const stale = isLongSilence(latestInteractionByContact.get(contact.id), today);
           return (
           <Card key={contact.id} variant="elevation" elevation={1}>
-            <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {/* flexWrap 讓「姓名區塊」與「操作圖示區塊」在窄螢幕（手機）擠不下同一行時各自換行，
+                避免姓名被壓到只剩幾像素寬、逐字換行的 RWD 版面問題（見使用者回報）。 */}
+            <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
               <Box
-                sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1, cursor: 'pointer', minWidth: 0 }}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 2,
+                  flex: '1 1 200px',
+                  minWidth: 0,
+                  cursor: 'pointer',
+                }}
                 onClick={() => navigate(`/contacts/${contact.id}`)}
               >
                 <Tooltip title={stale ? t('contacts.longSilenceWarning') : ''} disableHoverListener={!stale}>
@@ -214,47 +223,51 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
                   </Badge>
                 </Tooltip>
                 <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <Typography variant="subtitle1">{contact.name}</Typography>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="subtitle1" noWrap>
+                    {contact.name}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" noWrap>
                     {[contact.role, contact.company].filter(Boolean).join(' · ') || ' '}
                   </Typography>
                 </Box>
               </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <StarIcon fontSize="small" color={contact.importance >= 4 ? 'warning' : 'disabled'} />
-                <Typography variant="body2">{contact.importance}</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 0.5, ml: 'auto' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mr: 0.5 }}>
+                  <StarIcon fontSize="small" color={contact.importance >= 4 ? 'warning' : 'disabled'} />
+                  <Typography variant="body2">{contact.importance}</Typography>
+                </Box>
+                <IconButton
+                  aria-label={t('contacts.setReminder')}
+                  onClick={() => setReminderContactId(contact.id)}
+                  color={contact.nextContactReminder ? 'primary' : 'default'}
+                >
+                  <AlarmIcon fontSize="small" />
+                </IconButton>
+                <IconButton aria-label={t('contacts.interactions')} onClick={() => setActiveContactId(contact.id)}>
+                  <HistoryIcon fontSize="small" />
+                </IconButton>
+                <IconButton
+                  aria-label={t('contacts.suggestedTopics')}
+                  onClick={() => setTopicsContactId(contact.id)}
+                >
+                  <AutoAwesomeIcon fontSize="small" />
+                </IconButton>
+                <IconButton
+                  aria-label={t('contacts.webResearch')}
+                  onClick={() => setResearchContactId(contact.id)}
+                >
+                  <TravelExploreIcon fontSize="small" />
+                </IconButton>
+                <IconButton
+                  aria-label={t('contacts.moreActions')}
+                  onClick={(e) => {
+                    setMenuAnchor(e.currentTarget);
+                    setMenuContactId(contact.id);
+                  }}
+                >
+                  <MoreVertIcon fontSize="small" />
+                </IconButton>
               </Box>
-              <IconButton
-                aria-label={t('contacts.setReminder')}
-                onClick={() => setReminderContactId(contact.id)}
-                color={contact.nextContactReminder ? 'primary' : 'default'}
-              >
-                <AlarmIcon fontSize="small" />
-              </IconButton>
-              <IconButton aria-label={t('contacts.interactions')} onClick={() => setActiveContactId(contact.id)}>
-                <HistoryIcon fontSize="small" />
-              </IconButton>
-              <IconButton
-                aria-label={t('contacts.suggestedTopics')}
-                onClick={() => setTopicsContactId(contact.id)}
-              >
-                <AutoAwesomeIcon fontSize="small" />
-              </IconButton>
-              <IconButton
-                aria-label={t('contacts.webResearch')}
-                onClick={() => setResearchContactId(contact.id)}
-              >
-                <TravelExploreIcon fontSize="small" />
-              </IconButton>
-              <IconButton
-                aria-label={t('contacts.moreActions')}
-                onClick={(e) => {
-                  setMenuAnchor(e.currentTarget);
-                  setMenuContactId(contact.id);
-                }}
-              >
-                <MoreVertIcon fontSize="small" />
-              </IconButton>
             </CardContent>
           </Card>
           );
