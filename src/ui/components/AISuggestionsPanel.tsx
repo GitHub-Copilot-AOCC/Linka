@@ -4,6 +4,7 @@ import {
   Button,
   Card,
   CardContent,
+  Chip,
   Dialog,
   DialogActions,
   DialogContent,
@@ -13,6 +14,9 @@ import {
   Typography,
 } from '@mui/material';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import CheckIcon from '@mui/icons-material/Check';
+import EditIcon from '@mui/icons-material/Edit';
+import CloseIcon from '@mui/icons-material/Close';
 import { useTranslation } from 'react-i18next';
 import type { AgentSuggestion } from '@domain/agentSuggestion';
 import { todayDateString } from '@domain/interaction';
@@ -85,19 +89,21 @@ export function AISuggestionsPanel({ uid }: AISuggestionsPanelProps) {
                       </Typography>
                     </Box>
                     <Box sx={{ display: 'flex', gap: 1 }}>
-                      <Button
-                        size="small"
-                        variant="contained"
+                      <Chip
+                        icon={<CheckIcon />}
+                        label={t('aiSuggestions.adopt')}
+                        color="primary"
+                        variant="filled"
                         onClick={() =>
                           complete(uid, suggestion, contact?.name ?? '', {
                             description: t('aiSuggestions.adoptedDescription', { message: suggestion.message }),
                           })
                         }
-                      >
-                        {t('aiSuggestions.adopt')}
-                      </Button>
-                      <Button
-                        size="small"
+                      />
+                      <Chip
+                        icon={<EditIcon />}
+                        label={t('aiSuggestions.edit')}
+                        variant="outlined"
                         onClick={() =>
                           setEditState({
                             suggestion,
@@ -109,12 +115,13 @@ export function AISuggestionsPanel({ uid }: AISuggestionsPanelProps) {
                                 : (contact?.nextContactReminder ?? ''),
                           })
                         }
-                      >
-                        {t('aiSuggestions.edit')}
-                      </Button>
-                      <Button size="small" color="inherit" onClick={() => dismiss(uid, suggestion.id)}>
-                        {t('aiSuggestions.dismiss')}
-                      </Button>
+                      />
+                      <Chip
+                        icon={<CloseIcon />}
+                        label={t('aiSuggestions.dismiss')}
+                        variant="outlined"
+                        onClick={() => dismiss(uid, suggestion.id)}
+                      />
                     </Box>
                   </Box>
                 </Box>

@@ -2,9 +2,17 @@
   "common": {
     "cancel": "Cancel",
     "save": "Save",
+    "saved": "Saved",
     "delete": "Delete",
     "close": "Close",
-    "add": "Add"
+    "add": "Add",
+    "back": "Back"
+  },
+  "contactDetail": {
+    "notFound": "Contact not found",
+    "tabBasic": "Basic Info",
+    "tabInteractions": "Interactions",
+    "tabResearch": "Web Research"
   },
   "firebaseNotConfigured": {
     "title": "Firebase not configured",
