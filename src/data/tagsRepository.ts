@@ -1,4 +1,4 @@
-import { collection, doc, addDoc, deleteDoc, onSnapshot, getDocs } from 'firebase/firestore';
+import { collection, doc, addDoc, deleteDoc, deleteField, onSnapshot, getDocs, query, where, writeBatch } from 'firebase/firestore';
 import { db } from './firebase';
 import type { Tag, NewTagInput } from '@domain/tag';
 import { DEFAULT_TAG_NAMES } from '@domain/tag';
@@ -32,9 +32,28 @@ export async function createTag(uid: string, input: NewTagInput): Promise<string
   return ref.id;
 }
 
+/**
+ * 刪除標籤，並清除所有引用這個標籤的聯絡人身上的對應 id（見使用者回報的 corner case：
+ * 原本只刪標籤文件本身，聯絡人的 tags 陣列會留下指不到任何標籤的孤兒 id）。
+ */
 export async function deleteTag(uid: string, tagId: string): Promise<void> {
   if (!db) throw new Error('Firestore is not configured');
-  await deleteDoc(doc(db, 'users', uid, 'tags', tagId));
+
+  const batch = writeBatch(db);
+  batch.delete(doc(db, 'users', uid, 'tags', tagId));
+
+  const contactsQuery = query(
+    collection(db, 'users', uid, 'contacts'),
+    where('tags', 'array-contains', tagId)
+  );
+  const contactsSnapshot = await getDocs(contactsQuery);
+  for (const contactDoc of contactsSnapshot.docs) {
+    const tags = (contactDoc.data().tags as string[]) ?? [];
+    const remaining = tags.filter((id) => id !== tagId);
+    batch.update(contactDoc.ref, { tags: remaining.length > 0 ? remaining : deleteField() });
+  }
+
+  await batch.commit();
 }
 
 /** 新使用者第一次進入時，若尚無任何標籤，建立 v1 預設分類（見 spec.md §5.2）。 */

@@ -41,7 +41,7 @@ import { useContactsStore } from '@ui/store/contactsStore';
 import { useTagsStore } from '@ui/store/tagsStore';
 import { useInteractionsStore } from '@ui/store/interactionsStore';
 import type { NewContactInput, ContactSortBy } from '@domain/contact';
-import { filterContactsByKeyword, filterContactsByTag, sortContacts } from '@domain/contact';
+import { filterContactsByKeyword, filterContactsByTag, findContactsByName, sortContacts } from '@domain/contact';
 import { latestInteractionDateByContactId, isLongSilence, todayDateString } from '@domain/interaction';
 import { ContactInteractionsDialog } from '@ui/components/ContactInteractionsDialog';
 import { SetReminderDialog } from '@ui/components/SetReminderDialog';
@@ -54,6 +54,7 @@ import { ContactResearchDialog } from '@ui/components/ContactResearchDialog';
 import { BusinessCardScanDialog } from '@ui/components/BusinessCardScanDialog';
 import { DocumentImportDialog } from '@ui/components/DocumentImportDialog';
 import { QuickCaptureDialog } from '@ui/components/QuickCaptureDialog';
+import { TagMultiSelect } from '@ui/components/TagMultiSelect';
 
 interface ContactsListScreenProps {
   uid: string;
@@ -68,6 +69,7 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
   const [quickCaptureOpen, setQuickCaptureOpen] = useState(false);
   const [name, setName] = useState('');
   const [company, setCompany] = useState('');
+  const [newContactTagIds, setNewContactTagIds] = useState<string[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
   const [activeContactId, setActiveContactId] = useState<string | null>(null);
   const [topicsContactId, setTopicsContactId] = useState<string | null>(null);
@@ -107,12 +109,19 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
   );
   const today = todayDateString();
 
+  const duplicateNameMatches = useMemo(() => findContactsByName(contacts, name), [contacts, name]);
+
   async function handleSubmit() {
-    const input: NewContactInput = { name, company: company || undefined };
+    const input: NewContactInput = {
+      name,
+      company: company || undefined,
+      tags: newContactTagIds.length > 0 ? newContactTagIds : undefined,
+    };
     const result = await add(uid, input);
     if (result.ok) {
       setName('');
       setCompany('');
+      setNewContactTagIds([]);
       setFormError(null);
       setDialogOpen(false);
     } else {
@@ -188,9 +197,18 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
           const stale = isLongSilence(latestInteractionByContact.get(contact.id), today);
           return (
           <Card key={contact.id} variant="elevation" elevation={1}>
-            <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {/* flexWrap 讓「姓名區塊」與「操作圖示區塊」在窄螢幕（手機）擠不下同一行時各自換行，
+                避免姓名被壓到只剩幾像素寬、逐字換行的 RWD 版面問題（見使用者回報）。 */}
+            <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
               <Box
-                sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1, cursor: 'pointer', minWidth: 0 }}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 2,
+                  flex: '1 1 200px',
+                  minWidth: 0,
+                  cursor: 'pointer',
+                }}
                 onClick={() => navigate(`/contacts/${contact.id}`)}
               >
                 <Tooltip title={stale ? t('contacts.longSilenceWarning') : ''} disableHoverListener={!stale}>
@@ -205,47 +223,51 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
                   </Badge>
                 </Tooltip>
                 <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <Typography variant="subtitle1">{contact.name}</Typography>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="subtitle1" noWrap>
+                    {contact.name}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" noWrap>
                     {[contact.role, contact.company].filter(Boolean).join(' · ') || ' '}
                   </Typography>
                 </Box>
               </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <StarIcon fontSize="small" color={contact.importance >= 4 ? 'warning' : 'disabled'} />
-                <Typography variant="body2">{contact.importance}</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 0.5, ml: 'auto' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mr: 0.5 }}>
+                  <StarIcon fontSize="small" color={contact.importance >= 4 ? 'warning' : 'disabled'} />
+                  <Typography variant="body2">{contact.importance}</Typography>
+                </Box>
+                <IconButton
+                  aria-label={t('contacts.setReminder')}
+                  onClick={() => setReminderContactId(contact.id)}
+                  color={contact.nextContactReminder ? 'primary' : 'default'}
+                >
+                  <AlarmIcon fontSize="small" />
+                </IconButton>
+                <IconButton aria-label={t('contacts.interactions')} onClick={() => setActiveContactId(contact.id)}>
+                  <HistoryIcon fontSize="small" />
+                </IconButton>
+                <IconButton
+                  aria-label={t('contacts.suggestedTopics')}
+                  onClick={() => setTopicsContactId(contact.id)}
+                >
+                  <AutoAwesomeIcon fontSize="small" />
+                </IconButton>
+                <IconButton
+                  aria-label={t('contacts.webResearch')}
+                  onClick={() => setResearchContactId(contact.id)}
+                >
+                  <TravelExploreIcon fontSize="small" />
+                </IconButton>
+                <IconButton
+                  aria-label={t('contacts.moreActions')}
+                  onClick={(e) => {
+                    setMenuAnchor(e.currentTarget);
+                    setMenuContactId(contact.id);
+                  }}
+                >
+                  <MoreVertIcon fontSize="small" />
+                </IconButton>
               </Box>
-              <IconButton
-                aria-label={t('contacts.setReminder')}
-                onClick={() => setReminderContactId(contact.id)}
-                color={contact.nextContactReminder ? 'primary' : 'default'}
-              >
-                <AlarmIcon fontSize="small" />
-              </IconButton>
-              <IconButton aria-label={t('contacts.interactions')} onClick={() => setActiveContactId(contact.id)}>
-                <HistoryIcon fontSize="small" />
-              </IconButton>
-              <IconButton
-                aria-label={t('contacts.suggestedTopics')}
-                onClick={() => setTopicsContactId(contact.id)}
-              >
-                <AutoAwesomeIcon fontSize="small" />
-              </IconButton>
-              <IconButton
-                aria-label={t('contacts.webResearch')}
-                onClick={() => setResearchContactId(contact.id)}
-              >
-                <TravelExploreIcon fontSize="small" />
-              </IconButton>
-              <IconButton
-                aria-label={t('contacts.moreActions')}
-                onClick={(e) => {
-                  setMenuAnchor(e.currentTarget);
-                  setMenuContactId(contact.id);
-                }}
-              >
-                <MoreVertIcon fontSize="small" />
-              </IconButton>
             </CardContent>
           </Card>
           );
@@ -356,7 +378,16 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
         <PersonAddIcon fontSize="small" />
       </Fab>
 
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} fullWidth maxWidth="xs">
+      <Dialog
+        open={dialogOpen}
+        onClose={() => {
+          setDialogOpen(false);
+          setNewContactTagIds([]);
+          setFormError(null);
+        }}
+        fullWidth
+        maxWidth="xs"
+      >
         <DialogTitle>{t('contacts.addContact')}</DialogTitle>
         <DialogContent>
           {formError && <Alert severity="error" sx={{ mb: 2 }}>{formError}</Alert>}
@@ -375,9 +406,26 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
             value={company}
             onChange={(e) => setCompany(e.target.value)}
           />
+          {duplicateNameMatches.length > 0 && (
+            <Alert severity="warning" sx={{ mt: 1 }}>
+              {t('contacts.duplicateNameWarning', { name })}
+            </Alert>
+          )}
+          <Typography variant="body2" sx={{ mt: 2, mb: 1 }}>
+            {t('editContact.tags')}
+          </Typography>
+          <TagMultiSelect uid={uid} selectedIds={newContactTagIds} onChange={setNewContactTagIds} />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>{t('common.cancel')}</Button>
+          <Button
+            onClick={() => {
+              setDialogOpen(false);
+              setNewContactTagIds([]);
+              setFormError(null);
+            }}
+          >
+            {t('common.cancel')}
+          </Button>
           <Button onClick={handleSubmit} variant="contained">
             {t('common.add')}
           </Button>

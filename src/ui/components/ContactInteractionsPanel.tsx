@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Autocomplete,
+  Box,
   Button,
   Divider,
   IconButton,
@@ -90,6 +91,20 @@ export function ContactInteractionsPanel({ uid, contactId, contactName, active }
         isOptionEqualToValue={(option, value) => option.id === value.id}
         onChange={(_, value) => setSelectedContacts(value)}
         renderInput={(params) => <TextField {...params} label={t('interactionsDialog.boundContacts')} margin="dense" />}
+        renderOption={(props, option) => (
+          // 下拉選單附上公司名輔助辨識，避免同名聯絡人在清單裡長得一模一樣
+          // （見使用者回報的 corner case；已選取後的 Chip 底層仍以 id 區分，不受影響）。
+          <Box component="li" {...props} key={option.id}>
+            <Box>
+              <Typography variant="body2">{option.name}</Typography>
+              {option.company && (
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                  {option.company}
+                </Typography>
+              )}
+            </Box>
+          </Box>
+        )}
         sx={{ mt: 1 }}
       />
       <TextField

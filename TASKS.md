@@ -3,7 +3,7 @@
 > 對照 [spec.md](spec.md)。狀態以本檔案最後更新時間為準，開發過程中請隨手更新，避免重演舊版「文件落後程式碼」的問題（見 spec.md 附錄）。
 > 最後更新：2026-07-06
 
-**這輪功能開發到此為止**：使用者已明確表示 §11.5、§11.6 做完後，其餘待完成項目（見下方「⏳ 待完成」表格：Google 聯絡人 API 匯入、Stripe、AI 額度後端執行、§5.8 研究摘要重試、§5.8 照片搜尋）全部延後到日後有需要再處理，這份清單之後不會主動繼續動工。
+**§11.5/§11.6 後曾表示開發到此為止**，之後使用者又提出三項新需求（標籤複選＋隨時新增、Excel 匯出、首頁近況摘要），已完成見下方表格。其餘「⏳ 待完成」項目（Google 聯絡人 API 匯入、Stripe、AI 額度後端執行、§5.8 研究摘要重試、§5.8 照片搜尋）維持延後，不主動動工。
 
 ---
 
@@ -37,9 +37,13 @@
 | §11.4 | 列表久未聯絡色彩警示 | Avatar 右下角紅點 Badge，門檻與 §5.6 共用同一組「無互動 60 天」常數；已在真實瀏覽器測過：把互動改到 60 天前確認 Badge 出現，刪除後確認消失 |
 | §5.5a | AI 問答秘書（聊天） | 三個 agent 平行在獨立 git worktree 開發完成（`planContactQuery`「先查詢」+ `answerContactQuestion`「後生成」二階段設計），新增 `src/domain/assistantChat.ts`、`AssistantChatScreen.tsx`，接進導覽（`/assistant` 路由）。**已在真實瀏覽器測過**：問「我認識哪些在 Google 工作的人？」正確回答並附上聯絡人引用晶片 |
 | §5.7 | 文件通訊錄批次匯入 | 新增 `parseContactDocument` action（`functions/package.json` 加 `pdf-parse`/`mammoth`/`xlsx`），新增 `src/domain/documentImport.ts`、`DocumentImportDialog.tsx`。開發時已手刻 CSV/XLSX/DOCX/PDF 四種測試檔案追蹤解析邏輯確認正確。**已在真實瀏覽器端到端測過**：上傳一份含 2 筆聯絡人的 CSV，AI 100% 正確解析姓名/職稱/公司/電話/Email，預覽確認後正確批次寫入 Firestore |
-| §5.8 | 網路身分研究摘要（僅文字子功能） | 新增 `researchContactProfile` action，使用 Gemini `googleSearchRetrieval` grounding 工具（已對照實際安裝的 SDK 型別定義確認正確語法，非猜測）；新增 `Contact.researchLog`、`ContactResearchDialog.tsx`。**照片搜尋子功能明確不做**（需要額外圖片搜尋 API 憑證）。**實測卡在 Gemini API 429 Too Many Requests**（`googleSearchRetrieval` grounding 工具疑似有獨立於一般文字生成的配額限制，這個 session 已經打了很多次一般 API 但這是第一次用到 grounding 工具就被擋）；錯誤處理本身正確運作（優雅顯示錯誤訊息，未 crash），但**尚未看過成功產生摘要的真實案例**，需要之後確認 Google Cloud Console 的 billing/quota 設定或换個時間點重試 |
+| §5.8 | 網路身分研究摘要（僅文字子功能） | **原本卡住的 429 錯誤已找到根因並修好**：(1) 直接用 curl 打 REST API 實測發現，`gemini-3.1-flash-lite` 這個模型其實**不支援**舊版 `google_search_retrieval` 工具（正確 REST 回應是 400 INVALID_ARGUMENT「Please use google_search tool instead」，不是配額問題），但已安裝的 `@google/generative-ai` SDK（0.21.0）型別定義只認得舊欄位；改用型別斷言送出 `{ googleSearch: {} }`，SDK runtime 本身不會過濾欄位，繞過編譯期檢查即可、不必換套件。(2) 同時發現第二個獨立的 bug：引用來源擷取邏輯讀的是 `groundingChuncks`（沿用 SDK 型別定義裡的拼字），但實測真正的 REST 回應欄位其實正確拼字是 `groundingChunks`，導致這段程式碼從未真正讀到過 grounding 引用來源，一直悄悄 fallback 到文字內文的正規表示式擷取。(3) 使用者也提供了一把新的 Gemini API 金鑰，已更新到 Secret Manager 並重新部署。**已在真實瀏覽器端到端測過兩種情境**：查詢「王小明」（無法確認身份的一般名字）正確回覆「查無相關資料」；查詢真實公眾人物「黃仁勳／NVIDIA」成功產生準確摘要，且直接檢查 Cloud Function 回應確認 `citationSource: "grounding_metadata"`（不是文字 fallback）、正確擷取 6 個真實引用來源網址。**照片搜尋子功能仍明確不做**（需要額外圖片搜尋 API 憑證，範圍外）。 |
 | §11.5 | 聯絡人詳情 Material Tabs 頁 | 新增 `ContactDetailScreen.tsx`（路由 `/contacts/:contactId`），以「基本資料／互動紀錄／網路研究摘要」三個 Tab 取代原本全部塞在 Dialog 的做法；三個既有 Dialog（`EditContactDialog`/`ContactInteractionsDialog`/`ContactResearchDialog`）的內容抽成可重用的 Panel 元件（`ContactBasicInfoPanel`/`ContactInteractionsPanel`/`ContactResearchPanel`），Dialog 改為薄包裝，維持列表頁原本的快速存取圖示按鈕不變。各 Tab 內容只在啟用時掛載（lazy load）。列表頁點擊聯絡人姓名/頭像區域會導到新的詳情頁（獨立於原本的圖示按鈕，不互相干擾）。**已在真實瀏覽器端到端測過**：從列表點進王小明的詳情頁，三個 Tab 都能正確切換渲染；在「基本資料」修改後按儲存，確認 Firestore 寫入完成後正確跳出「已儲存」提示；返回按鈕正確回到列表頁，列表頁原本的圖示按鈕互動不受影響 |
 | §11.6 | AI 卡片 Assist Chip 統一 | 把 `AISuggestionsPanel.tsx`（首頁「今天需要處理」）的採納/修改/忽略三個一般 `Button` 改成帶圖示的 `Chip`（MUI Assist Chip 樣式：可點擊、圓角、小尺寸）。**範圍刻意限定在這個元件**：只有這裡是真正的「三選一操作列」語意，符合 spec §11.6 字面定義；`SuggestedTopicsDialog`（純唯讀建議、無操作列）、`QuickCaptureDialog`（Checkbox 是合法的多選語意，換成 Chip 反而是體驗倒退）、`AssistantChatScreen`（既有的引用 Chip 是資訊展示不是操作）都刻意不動，避免為了湊字面規格硬造假操作。**已在真實瀏覽器驗證**：暫時注入一筆假建議資料觸發面板渲染，確認三個 Chip（採納/修改/忽略）樣式正確且點擊互動正常（點「修改」正確跳出調整對話框），驗證完已還原注入程式碼，並重新跑過 type-check + build 確認乾淨 |
+| 使用者需求 | 標籤複選 + 隨時新增 | 標籤原本就支援複選（`Contact.tags: string[]`）與隨時管理（`TagsManagerDialog`），但只有編輯聯絡人時能選標籤，新增聯絡人當下無法選。新增共用元件 `TagMultiSelect.tsx`（複選 Chip + 內嵌「+ 新增標籤」輸入框，建立後即時可選，因為 `useTagsStore` 本來就是 Firestore `onSnapshot` 即時訂閱），接進 `ContactBasicInfoPanel`（取代原本重複的 Chip 邏輯）與 `ContactsListScreen` 的「新增聯絡人」快速對話框。**已在真實瀏覽器端到端測過**：在編輯表單用內嵌輸入框新建一個「好朋友」標籤，立即出現在選項中可勾選、存檔成功；在新增聯絡人對話框勾選既有的「VIP」標籤，新增後用標籤篩選確認該聯絡人正確被分類 |
+| 使用者需求 | 聯絡人資料庫 Excel 匯出 | 新增前端 `xlsx`（SheetJS，與 `functions/` 既有版本 `^0.18.5` 一致）依賴；新增 `src/domain/contactExport.ts`（純資料轉換：聯絡人/互動紀錄轉表格列，標籤 id 轉可讀名稱，欄位標題沿用既有 i18n key 避免重複翻譯維護）、`src/platform/exportContacts.ts`（用 SheetJS 產生兩個工作表「聯絡人」「互動紀錄」並觸發瀏覽器下載）。接在設定頁新增「資料匯出」區塊。**已驗證**：真實瀏覽器點擊下載按鈕無任何 console 錯誤（含有一筆真實互動紀錄的情況下也正常）；另外直接呼叫 domain 層轉換函式餵入樣本資料，確認輸出欄位順序與內容正確（標籤 id 正確轉換成「好朋友」等可讀名稱） |
+| 使用者需求 | 首頁近況摘要 | 新增三個唯讀首頁面板（放在既有 AI 建議/手動提醒之後）：`UpcomingBirthdaysPanel`（未來 14 天內生日，與 §5.6 AI 建議的「生日前 3 天」主動提醒是分開的兩個功能）、`RecentContactsPanel`（依 `createdAt` 新到舊取前 5 筆，點擊可導到 §11.5 聯絡人詳情頁）、`RecentInteractionsPanel`（依日期新到舊取前 5 筆互動）。三者皆為「沒有資料就不顯示」，不會在空清單時佔版面。**已在真實瀏覽器端到端測過**：新增聯絡人後首頁正確顯示在「最近新增的聯絡人」最上方，點擊頭像正確導到詳情頁；新增一筆互動後「最近的互動紀錄」正確顯示聯絡人晶片/類型/日期/描述 |
+| Corner case | 6 項資料完整性/同名聯絡人 corner case 修復 | 使用者主動要求檢視「同名聯絡人怎麼處理」等 corner case，先用 agent 稽核現況再逐項修復：(1) **生日 2/29 在非閏年算錯**——前端 `upcomingBirthdays()` 與後端 `normalizeBirthdayForYear()` 原本用 `Date.UTC`/字串拼接處理 2/29，非閏年會溢位變 3/1（前端）或永遠比對不到而完全不觸發提醒（後端），兩邊都改成非閏年時算在 2/28。(2) **刪除標籤留下孤兒 id**——`tagsRepository.deleteTag()` 改用 `writeBatch`，刪標籤的同時把該 id 從所有引用它的聯絡人 `tags` 陣列移除。(3) **刪除聯絡人留下孤兒 AI 建議**——`contactsRepository.deleteContact()` 改用 `writeBatch` 一併刪除該聯絡人的 `AgentSuggestion`；**互動紀錄刻意不動**，因為刪除確認對話框明確承諾「互動紀錄不會自動刪除」，改成會刪互動紀錄等於破壞既有承諾，故只在顯示層（`RecentInteractionsPanel`、Excel 匯出）把查無聯絡人的情況從「顯示原始 Firestore id」改成「已刪除的聯絡人」。(4) **新增聯絡人無同名警示**——新增 `findContactsByName()`，接進「新增聯絡人」快速對話框與名片 OCR 確認畫面，同名時顯示不擋的警示（比照既有 vCard/文件匯入的處理精神）。(5) **互動紀錄綁定下拉同名分不清**——`ContactInteractionsPanel` 的 Autocomplete 加 `renderOption`，下拉選單多顯示公司名。(6) **AI 快速記錄同名比對難以覆核**——`QuickCaptureDialog` 確認畫面的比對結果 Chip 也加上公司名。**已在真實瀏覽器逐項驗證**：新增同名聯絡人跳出警示、刪除標籤後聯絡人身上的標籤即時消失、刪除聯絡人後其互動紀錄仍保留但顯示「已刪除的聯絡人」、互動紀錄下拉選單正確顯示公司名輔助辨識；另外直接呼叫 domain/後端函式驗證 2/29 生日在非閏年/閏年都算出正確日期。Cloud Functions 已重新部署（僅更新 `geminiProxy`/`generateProactiveSuggestionsDaily` 兩個既有函式，部署前已核對正式環境函式清單與本地一致，無誤刪風險）。 |
 
 ---
 
@@ -47,7 +51,6 @@
 
 | 章節 | 功能 | 依賴/備註 |
 |---|---|---|
-| §5.8 | 網路研究摘要實際成功案例 | `googleSearchRetrieval` grounding 呼叫目前被 Gemini API 擋 429，需確認 Google Cloud Console billing/quota 設定是否需要額外開通，或换時間重試 |
 | §5.8 | 照片搜尋子功能 | 需要額外圖片搜尋 API/憑證（例如 Google Custom Search JSON API + CSE ID），本專案目前未設定，明確排除於本輪開發範圍 |
 | §5.9 | Google 聯絡人 API 匯入 | 需要額外 OAuth scope（People API），vCard 部分已完成 |
 | §8.4 | Stripe 訂閱整合 | 完全沒開始 |

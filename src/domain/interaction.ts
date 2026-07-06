@@ -77,3 +77,10 @@ export function isLongSilence(latestInteractionDate: string | undefined, todayIs
   const days = Math.floor((newer.getTime() - older.getTime()) / 86400000);
   return days >= LONG_SILENCE_DAYS;
 }
+
+/** 依日期新到舊排序，取前 limit 筆，供首頁「最近的互動紀錄」使用。 */
+export function recentInteractions(interactions: Interaction[], limit = 5): Interaction[] {
+  return [...interactions]
+    .sort((a, b) => b.date.localeCompare(a.date) || b.createdAt - a.createdAt)
+    .slice(0, limit);
+}

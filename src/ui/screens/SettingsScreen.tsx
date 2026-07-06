@@ -14,14 +14,21 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@ui/store/authStore';
 import { useUsageQuotaStore } from '@ui/store/usageQuotaStore';
+import { useContactsStore } from '@ui/store/contactsStore';
+import { useInteractionsStore } from '@ui/store/interactionsStore';
+import { useTagsStore } from '@ui/store/tagsStore';
 import { SyncStatusChip } from '@ui/components/SyncStatusChip';
 import { OperationLogDialog } from '@ui/components/OperationLogDialog';
+import { exportContactsToExcel } from '@platform/exportContacts';
 
-/** 設定畫面：帳號資訊、同步狀態、AI 用量、操作歷史入口、語言切換、登出（見 spec.md §11.2、§3、§5.12）。 */
+/** 設定畫面：帳號資訊、同步狀態、AI 用量、操作歷史入口、語言切換、資料匯出、登出（見 spec.md §11.2、§3、§5.12）。 */
 export function SettingsScreen() {
   const { user, logout } = useAuthStore();
   const { t, i18n } = useTranslation();
   const { quota, subscribe: subscribeQuota } = useUsageQuotaStore();
+  const { contacts, subscribe: subscribeContacts } = useContactsStore();
+  const { all: interactions, subscribeAll: subscribeInteractions } = useInteractionsStore();
+  const { tags, subscribe: subscribeTags } = useTagsStore();
   const [logOpen, setLogOpen] = useState(false);
 
   useEffect(() => {
@@ -29,7 +36,53 @@ export function SettingsScreen() {
     return subscribeQuota(user.uid);
   }, [user, subscribeQuota]);
 
+  useEffect(() => {
+    if (!user) return;
+    return subscribeContacts(user.uid);
+  }, [user, subscribeContacts]);
+
+  useEffect(() => {
+    if (!user) return;
+    return subscribeInteractions(user.uid);
+  }, [user, subscribeInteractions]);
+
+  useEffect(() => {
+    if (!user) return;
+    return subscribeTags(user.uid);
+  }, [user, subscribeTags]);
+
   if (!user) return null;
+
+  function handleExport() {
+    exportContactsToExcel(contacts, interactions, tags, {
+      contactColumnLabels: [
+        t('contacts.name'),
+        t('editContact.role'),
+        t('contacts.company'),
+        t('editContact.phone'),
+        t('auth.email'),
+        t('editContact.birthday'),
+        t('editContact.linkedin'),
+        t('editContact.tags'),
+        t('editContact.importance'),
+        t('editContact.notes'),
+      ],
+      interactionColumnLabels: [
+        t('export.colContactName'),
+        t('interactionsDialog.type'),
+        t('interactionsDialog.date'),
+        t('interactionsDialog.description'),
+      ],
+      contactsSheetName: t('export.sheetContacts'),
+      interactionsSheetName: t('export.sheetInteractions'),
+      interactionTypeLabels: {
+        meeting: t('interactionsDialog.typeMeeting'),
+        call: t('interactionsDialog.typeCall'),
+        email: t('interactionsDialog.typeEmail'),
+      },
+      deletedContactLabel: t('common.deletedContact'),
+    });
+  }
 
   return (
     <Box sx={{ p: 2, pb: 10 }}>
@@ -92,6 +145,16 @@ export function SettingsScreen() {
           }
         >
           <ListItemText primary={t('settings.operationLog')} />
+        </ListItem>
+        <Divider component="li" />
+        <ListItem
+          secondaryAction={
+            <Button size="small" variant="outlined" onClick={handleExport} disabled={contacts.length === 0}>
+              {t('settings.exportButton')}
+            </Button>
+          }
+        >
+          <ListItemText primary={t('settings.exportContacts')} secondary={t('settings.exportDescription')} />
         </ListItem>
       </List>
 

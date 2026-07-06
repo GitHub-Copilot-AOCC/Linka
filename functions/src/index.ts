@@ -154,9 +154,17 @@ const addDays = (value: Date, days: number) => {
     return next;
 };
 
+const isLeapYear = (year: number) => (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+
 const normalizeBirthdayForYear = (birthday: string, year: number) => {
-    const [, month, day] = birthday.split("-");
-    return `${year}-${month}-${day}`;
+    const [, monthStr, dayStr] = birthday.split("-");
+    const month = Number(monthStr);
+    const day = Number(dayStr);
+    // 2/29 生日在非閏年沒有對應日期；不調整的話 targetIso 永遠不會等於 "YYYY-02-29"（因為
+    // 那不是真實日曆日），導致這種生日在非閏年完全不會觸發主動提醒。比照前端 upcomingBirthdays
+    // 邏輯算在 2/28（見使用者回報的 corner case）。
+    const adjustedDay = month === 2 && day === 29 && !isLeapYear(year) ? 28 : day;
+    return `${year}-${monthStr}-${String(adjustedDay).padStart(2, "0")}`;
 };
 
 const resolveUpcomingBirthday = (birthday: string, today: Date) => {
@@ -512,16 +520,16 @@ export const geminiProxy = onRequest({
                     generationConfig: {
                         temperature: 0.3,
                     },
-                    // 已安裝的 @google/generative-ai SDK（0.21.0）型別定義中，Google 搜尋
-                    // grounding 工具的形狀是 GoogleSearchRetrievalTool -> { googleSearchRetrieval: {} }
-                    // （見 node_modules/@google/generative-ai/dist/generative-ai.d.ts 的
-                    // GoogleSearchRetrievalTool / Tool 型別定義）。較新版 SDK（@google/genai）
-                    // 改用 `{ googleSearch: {} }`，但那是不同的套件，此處以實際安裝版本為準。
-                    tools: [
-                        {
-                            googleSearchRetrieval: {},
-                        },
-                    ],
+                    // 直接用 curl 打 REST API 實測確認：`gemini-3.1-flash-lite` 這個模型已不支援
+                    // 舊版 `google_search_retrieval` 工具（回傳 400 INVALID_ARGUMENT，訊息明講
+                    // "Please use google_search tool instead"），必須改用 `google_search`。
+                    // 已安裝的 @google/generative-ai SDK（0.21.0）型別定義沒有這個新欄位（只認得
+                    // 舊的 GoogleSearchRetrievalTool），但 SDK runtime 只是把 tools 原樣序列化送出
+                    // （見 node_modules/@google/generative-ai/dist/index.js，未對欄位做白名單過濾），
+                    // 所以用型別斷言繞過編譯期檢查即可、不需要換套件。
+                    tools: [{ googleSearch: {} }] as unknown as Parameters<
+                        typeof genAI.getGenerativeModel
+                    >[0]["tools"],
                 });
                 const apiResult = await model.generateContent({
                     contents: [{ role: "user", parts: [{ text: prompt }] }],
@@ -531,8 +539,13 @@ export const geminiProxy = onRequest({
                 const text = apiResult.response.text();
 
                 // 嘗試從 SDK 回傳的 groundingMetadata 取得真實引用來源網址。
-                // 注意：SDK 型別定義中此欄位名稱為 "groundingChuncks"（原文拼字如此，非筆誤）。
-                const groundingChunks = candidate?.groundingMetadata?.groundingChuncks ?? [];
+                // 修正：之前這裡讀的是 "groundingChuncks"（SDK 型別定義裡的拼字），但直接用 curl
+                // 打 REST API 實測發現正式回應的欄位其實是正確拼字 "groundingChunks"，導致這段程式
+                // 一直讀到 undefined、從未真正用到 grounding 來源，全部悄悄 fallback 到後面的文字擷取。
+                const groundingMetadata = candidate?.groundingMetadata as
+                    | { groundingChunks?: Array<{ web?: { uri?: string } }> }
+                    | undefined;
+                const groundingChunks = groundingMetadata?.groundingChunks ?? [];
                 const citedUrls = groundingChunks
                     .map((chunk) => chunk.web?.uri)
                     .filter((uri): uri is string => typeof uri === "string" && uri.length > 0);

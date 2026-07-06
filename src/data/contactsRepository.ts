@@ -7,8 +7,11 @@ import {
   deleteField,
   onSnapshot,
   query,
+  where,
   orderBy,
   Timestamp,
+  getDocs,
+  writeBatch,
 } from 'firebase/firestore';
 import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, storage } from './firebase';
@@ -79,9 +82,29 @@ export async function updateContact(
   });
 }
 
+/**
+ * 刪除聯絡人。互動紀錄「歷史內容」刻意保留、不因刪除聯絡人而消失
+ * （見 deleteContact 對話框文案：「此操作無法復原（互動紀錄不會自動刪除）」，
+ * 這是既有明確對使用者承諾的行為，不能因為這次的孤兒資料清理而破壞）。
+ * 這裡只清掉沒有這種保留承諾、刪除聯絡人後就完全失去意義的 AI 建議
+ * （AgentSuggestion 永遠指向已不存在的聯絡人，見使用者回報的 corner case）。
+ */
 export async function deleteContact(uid: string, contactId: string): Promise<void> {
   if (!db) throw new Error('Firestore is not configured');
-  await deleteDoc(doc(db, 'users', uid, 'contacts', contactId));
+
+  const batch = writeBatch(db);
+  batch.delete(doc(db, 'users', uid, 'contacts', contactId));
+
+  const suggestionsQuery = query(
+    collection(db, 'users', uid, 'suggestions'),
+    where('contactId', '==', contactId)
+  );
+  const suggestionsSnapshot = await getDocs(suggestionsQuery);
+  for (const suggestionDoc of suggestionsSnapshot.docs) {
+    batch.delete(suggestionDoc.ref);
+  }
+
+  await batch.commit();
 }
 
 /**
