@@ -229,11 +229,9 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
           <Card key={contact.id} variant="elevation" elevation={1}>
             {/*
               手機（xs）強制用直向排列（姓名列在上、圖示列在下），桌面（sm+）維持左右並排。
-              先前用 flexWrap + flex-shrink 讓瀏覽器「自己決定」要不要換行，但因為姓名區塊設了
-              minWidth:0（讓文字能夠 ellipsis 截斷），瀏覽器會優先無限壓縮姓名寬度而不是換行，
-              導致長姓名/長公司名的聯絡人整行擠成一行、幾乎看不清楚（見使用者用真實資料回報的
-              screenshot）。改成 flexDirection 明確指定兩種螢幕寬度各自的排列方式，不再讓瀏覽器
-              自己權衡「換行 vs 壓縮」。
+              兩個子區塊在 xs 都明確給 width:100%，讓卡片寬度永遠固定等於卡片本身寬度，
+              不會因為姓名/公司字數長短而變寬變窄（見使用者回報：版面會隨文字長度伸縮）；
+              超出寬度的文字直接用 noWrap+ellipsis 截斷即可，不需要完整顯示。
             */}
             <CardContent
               sx={{
@@ -249,6 +247,7 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
                   display: 'flex',
                   alignItems: 'center',
                   gap: 2,
+                  width: { xs: '100%', sm: 'auto' },
                   flex: { sm: '1 1 200px' },
                   minWidth: 0,
                   cursor: 'pointer',
@@ -295,7 +294,16 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
                   </Typography>
                 </Box>
               </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 0.5, ml: { sm: 'auto' } }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: 0.5,
+                  width: { xs: '100%', sm: 'auto' },
+                  ml: { sm: 'auto' },
+                }}
+              >
                 <Box sx={{ display: 'flex', alignItems: 'center', mr: 0.5 }}>
                   <StarIcon fontSize="small" sx={{ color: contact.importance >= 4 ? '#F9A825' : '#CBD5E0' }} />
                   <Typography variant="body2" sx={{ fontSize: { xs: '0.95rem', sm: '0.875rem' } }}>
