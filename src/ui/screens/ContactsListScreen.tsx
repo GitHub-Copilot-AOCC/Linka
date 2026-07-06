@@ -227,15 +227,29 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
           const stale = isLongSilence(latestInteractionByContact.get(contact.id), today);
           return (
           <Card key={contact.id} variant="elevation" elevation={1}>
-            {/* flexWrap 讓「姓名區塊」與「操作圖示區塊」在窄螢幕（手機）擠不下同一行時各自換行，
-                避免姓名被壓到只剩幾像素寬、逐字換行的 RWD 版面問題（見使用者回報）。 */}
-            <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', p: { xs: 2, sm: 2 } }}>
+            {/*
+              手機（xs）強制用直向排列（姓名列在上、圖示列在下），桌面（sm+）維持左右並排。
+              先前用 flexWrap + flex-shrink 讓瀏覽器「自己決定」要不要換行，但因為姓名區塊設了
+              minWidth:0（讓文字能夠 ellipsis 截斷），瀏覽器會優先無限壓縮姓名寬度而不是換行，
+              導致長姓名/長公司名的聯絡人整行擠成一行、幾乎看不清楚（見使用者用真實資料回報的
+              screenshot）。改成 flexDirection 明確指定兩種螢幕寬度各自的排列方式，不再讓瀏覽器
+              自己權衡「換行 vs 壓縮」。
+            */}
+            <CardContent
+              sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' },
+                alignItems: { xs: 'stretch', sm: 'center' },
+                gap: 1,
+                p: 2,
+              }}
+            >
               <Box
                 sx={{
                   display: 'flex',
                   alignItems: 'center',
                   gap: 2,
-                  flex: '1 1 200px',
+                  flex: { sm: '1 1 200px' },
                   minWidth: 0,
                   cursor: 'pointer',
                 }}
@@ -281,7 +295,7 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
                   </Typography>
                 </Box>
               </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 0.5, ml: 'auto' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 0.5, ml: { sm: 'auto' } }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mr: 0.5 }}>
                   <StarIcon fontSize="small" sx={{ color: contact.importance >= 4 ? '#F9A825' : '#CBD5E0' }} />
                   <Typography variant="body2" sx={{ fontSize: { xs: '0.95rem', sm: '0.875rem' } }}>
