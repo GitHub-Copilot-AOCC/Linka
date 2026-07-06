@@ -9,6 +9,16 @@ export interface ContactPhoto {
   addedAt: number; // epoch ms
 }
 
+// 網路身分研究摘要的一筆紀錄（見 spec.md §5.8、§7）。持續累加，不覆蓋舊紀錄。
+// 本次僅實作文字摘要子功能；照片搜尋子功能（PhotoCandidate）需要額外的圖片搜尋
+// API/憑證，故此處不包含 candidatePhotos 欄位。
+export interface ResearchEntry {
+  id: string;
+  summary: string; // AI 產生的摘要文章內容（查無資料時為明確的「查無相關資料」訊息）
+  sourceUrls: string[]; // 摘要所引用的來源網址
+  createdAt: number; // epoch ms，用於呈現時間軸
+}
+
 export interface Contact {
   id: string;
   name: string;
@@ -26,6 +36,7 @@ export interface Contact {
   photos?: ContactPhoto[];
   nextContactReminder?: string; // ISO date
   source?: ContactSource;
+  researchLog?: ResearchEntry[]; // 網路身分研究摘要歷史（見 spec.md §5.8），持續累加、不覆蓋
   createdAt: number;
   updatedAt: number;
 }

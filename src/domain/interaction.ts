@@ -15,6 +15,10 @@ export interface Interaction {
 }
 
 export type NewInteractionInput = Omit<Interaction, 'id' | 'createdAt' | 'source' | 'rawInput'>;
+export type CreateInteractionInput = NewInteractionInput & {
+  source?: InteractionSource;
+  rawInput?: string;
+};
 
 export interface InteractionValidationResult {
   valid: boolean;

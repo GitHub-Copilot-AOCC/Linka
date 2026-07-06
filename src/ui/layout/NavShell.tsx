@@ -16,6 +16,7 @@ import {
 import HomeIcon from '@mui/icons-material/Home';
 import PeopleIcon from '@mui/icons-material/People';
 import SettingsIcon from '@mui/icons-material/Settings';
+import ChatIcon from '@mui/icons-material/Chat';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { SyncStatusChip } from '@ui/components/SyncStatusChip';
@@ -36,6 +37,7 @@ export function NavShell({ children }: { children: React.ReactNode }) {
   const DESTINATIONS = [
     { path: '/', label: t('nav.home'), icon: <HomeIcon /> },
     { path: '/contacts', label: t('nav.contacts'), icon: <PeopleIcon /> },
+    { path: '/assistant', label: t('nav.assistant'), icon: <ChatIcon /> },
     { path: '/settings', label: t('nav.settings'), icon: <SettingsIcon /> },
   ];
 

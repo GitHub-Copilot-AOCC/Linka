@@ -14,7 +14,10 @@ interface ContactsState {
   loading: boolean;
   error: string | null;
   subscribe: (uid: string) => () => void;
-  add: (uid: string, input: NewContactInput) => Promise<{ ok: boolean; errors?: Record<string, string> }>;
+  add: (
+    uid: string,
+    input: NewContactInput
+  ) => Promise<{ ok: boolean; id?: string; errors?: Record<string, string> }>;
   update: (uid: string, contactId: string, patch: Partial<Contact>) => Promise<void>;
   remove: (uid: string, contactId: string) => Promise<void>;
 }
@@ -34,15 +37,16 @@ export const useContactsStore = create<ContactsState>((set, get) => ({
     if (!result.valid) {
       return { ok: false, errors: result.errors as Record<string, string> };
     }
+
     try {
-      await createContact(uid, input);
+      const id = await createContact(uid, input);
       createLogEntry(uid, {
         action: '新增聯絡人',
         contactName: input.name,
         type: 'create',
         details: input.name,
       }).catch((err) => console.error('createLogEntry failed:', err));
-      return { ok: true };
+      return { ok: true, id };
     } catch (err) {
       set({ error: (err as Error).message });
       return { ok: false, errors: { name: (err as Error).message } };

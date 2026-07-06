@@ -3,13 +3,14 @@ import {
   doc,
   addDoc,
   deleteDoc,
+  getDocs,
   onSnapshot,
   query,
   where,
   orderBy,
 } from 'firebase/firestore';
 import { db } from './firebase';
-import type { Interaction, NewInteractionInput } from '@domain/interaction';
+import type { CreateInteractionInput, Interaction } from '@domain/interaction';
 
 // Firestore 路徑：users/{uid}/interactions/{interactionId}（見 spec.md §7，v1 獨立集合）
 
@@ -55,12 +56,47 @@ export function subscribeAllInteractions(uid: string, onChange: (interactions: I
   });
 }
 
-export async function createInteraction(uid: string, input: NewInteractionInput): Promise<string> {
-  const ref = await addDoc(interactionsCollection(uid), {
+/**
+ * 一次性撈出「綁定至少一位指定聯絡人」的互動紀錄（見 spec.md §5.5a 檢索策略第 2 步：
+ * 用查詢規劃線索對 Firestore 做範圍查詢，而非訂閱整個集合）。Firestore 的
+ * `array-contains-any` 最多支援 10 個值，呼叫端若聯絡人數超過需自行分批。
+ */
+export async function fetchInteractionsForContacts(
+  uid: string,
+  contactIds: string[]
+): Promise<Record<string, Interaction[]>> {
+  const result: Record<string, Interaction[]> = {};
+  if (contactIds.length === 0) return result;
+
+  const batches: string[][] = [];
+  for (let i = 0; i < contactIds.length; i += 10) {
+    batches.push(contactIds.slice(i, i + 10));
+  }
+
+  const allInteractions: Interaction[] = [];
+  for (const batch of batches) {
+    const q = query(interactionsCollection(uid), where('contactIds', 'array-contains-any', batch));
+    const snapshot = await getDocs(q);
+    allInteractions.push(...snapshot.docs.map((d) => fromFirestore(d.id, d.data())));
+  }
+
+  for (const contactId of contactIds) {
+    result[contactId] = allInteractions.filter((i) => i.contactIds.includes(contactId));
+  }
+  return result;
+}
+
+export async function createInteraction(uid: string, input: CreateInteractionInput): Promise<string> {
+  const data: Record<string, unknown> = {
     ...input,
-    source: 'manual',
+    source: input.source ?? 'manual',
     createdAt: Date.now(),
-  });
+  };
+  if (input.rawInput) {
+    data.rawInput = input.rawInput;
+  }
+
+  const ref = await addDoc(interactionsCollection(uid), data);
   return ref.id;
 }
 

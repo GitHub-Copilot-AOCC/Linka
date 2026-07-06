@@ -32,6 +32,7 @@
     "appName": "Linka",
     "home": "首頁",
     "contacts": "聯絡人",
+    "assistant": "AI 秘書問答",
     "settings": "設定"
   },
   "dashboard": {
@@ -54,10 +55,12 @@
     "setReminder": "設定提醒",
     "interactions": "互動紀錄",
     "suggestedTopics": "建議話題",
+    "webResearch": "搜尋網路資料",
     "longSilenceWarning": "超過 60 天沒有互動紀錄，該找個時間聯絡一下了",
     "moreActions": "更多操作",
     "edit": "編輯",
     "addContact": "新增聯絡人",
+    "quickCapture": "AI 快速記錄",
     "name": "姓名",
     "company": "公司"
   },
@@ -91,7 +94,8 @@
     "description": "描述",
     "date": "日期",
     "addInteraction": "新增互動",
-    "empty": "還沒有互動紀錄"
+    "empty": "還沒有互動紀錄",
+    "boundContacts": "綁定聯絡人"
   },
   "tags": {
     "title": "標籤管理",
@@ -127,6 +131,15 @@
     "empty": "目前沒有建議話題，稍後再試試看。",
     "genericError": "取得建議話題失敗，請稍後再試。"
   },
+  "contactResearch": {
+    "title": "{{name}} 的網路研究摘要",
+    "disclaimer": "此摘要由 AI 自動搜尋網路公開資訊產生，可能不準確，或誤植為同名同姓的其他人，請務必自行查證來源後再參考使用。",
+    "search": "搜尋網路資料",
+    "searchAgain": "再次搜尋",
+    "sources": "來源：",
+    "empty": "尚無研究紀錄，點擊「搜尋網路資料」開始第一次搜尋。",
+    "genericError": "搜尋失敗，請稍後再試。"
+  },
   "businessCard": {
     "menuLabel": "掃描名片",
     "title": "名片辨識",
@@ -138,6 +151,51 @@
     "confirmAdd": "確認新增聯絡人",
     "saving": "新增中…"
   },
+  "aiSuggestions": {
+    "title": "今天需要處理",
+    "typeBirthday": "生日提醒",
+    "typeLongSilence": "久未聯絡",
+    "typeManualReminderDue": "手動提醒到期",
+    "unknownContact": "未知聯絡人",
+    "triggerDate": "觸發日期：{{date}}",
+    "adoptedDescription": "已採納 AI 建議：{{message}}",
+    "adopt": "採納",
+    "edit": "修改",
+    "dismiss": "忽略",
+    "editTitle": "調整 AI 建議",
+    "interactionDescription": "互動描述",
+    "interactionDate": "互動日期",
+    "nextReminderOptional": "下次提醒日期（可留白）"
+  },
+  "quickCapture": {
+    "title": "AI 快速記錄",
+    "modeText": "文字",
+    "modeAudio": "語音",
+    "textInputLabel": "輸入剛剛發生的互動",
+    "textInputPlaceholder": "例如：今天和王小明吃午餐，他說下週會介紹產品經理給我，兩週後提醒我再跟進。",
+    "audioTitle": "語音輸入",
+    "audioDescription": "直接錄下一段描述，AI 會拆成互動、提醒與建議。",
+    "startRecording": "開始錄音",
+    "stopRecording": "停止",
+    "recordedSize": "已錄製 {{kb}} KB 音訊",
+    "generatePreview": "產生預覽",
+    "generating": "產生預覽中…",
+    "offlineError": "離線時無法使用 AI 快速記錄。",
+    "textRequiredError": "請先輸入一段文字描述。",
+    "audioRequiredError": "請先完成一段錄音。",
+    "genericError": "AI 快速記錄失敗，請稍後再試。",
+    "createContactError": "無法建立新聯絡人：{{name}}",
+    "logAction": "AI 快速記錄",
+    "summaryTitle": "AI 預覽摘要",
+    "contactMatchesTitle": "聯絡人比對",
+    "newContactChip": "新聯絡人：{{name}}",
+    "suggestedInteractionsTitle": "建議寫入的互動",
+    "reminderSuggestionsTitle": "提醒建議",
+    "importanceSuggestionsTitle": "星級建議",
+    "importanceSuggestionLabel": "建議星級 {{level}} · {{reason}}",
+    "saving": "寫入中…",
+    "confirmSave": "確認寫入"
+  },
   "import": {
     "menuLabel": "匯入聯絡人",
     "title": "匯入聯絡人",
@@ -147,5 +205,31 @@
     "foundCount": "找到 {{count}} 筆聯絡人，勾選要匯入的項目：",
     "duplicate": "可能重複",
     "importSelected": "匯入 {{count}} 筆"
+  },
+  "assistantChat": {
+    "title": "AI 秘書問答",
+    "emptyHint": "問我任何關於你人脈資料庫的問題，例如「我上次跟王小明見面聊了什麼」或「我認識哪些在 Google 工作的人」。",
+    "inputPlaceholder": "輸入你的問題…",
+    "send": "送出",
+    "thinking": "AI 秘書思考中…",
+    "assistantLabel": "AI 秘書",
+    "citationWithDate": "{{name}}（{{date}}）",
+    "genericError": "問答失敗，請稍後再試。"
+  },
+  "docImport": {
+    "menuLabel": "從文件匯入",
+    "title": "從文件批次匯入聯絡人",
+    "description": "上傳一份包含聯絡人清單的 PDF、Word（.docx）或 Excel（.xlsx/.csv）文件，AI 會自動解析出聯絡人，供您確認後再匯入。",
+    "chooseFile": "選擇檔案",
+    "fileTooLarge": "檔案過大，請選擇 {{maxMB}}MB 以下的檔案。",
+    "unsupportedType": "不支援的檔案格式，請選擇 PDF、.docx、.xlsx 或 .csv 檔案。",
+    "offlineError": "離線時無法使用文件匯入功能。",
+    "parsing": "AI 解析中…",
+    "noContactsFound": "無法從這份文件中辨識出任何聯絡人。",
+    "genericError": "文件解析失敗，請稍後再試。",
+    "foundCount": "找到 {{count}} 筆聯絡人，請確認並勾選要匯入的項目：",
+    "duplicate": "可能重複",
+    "importSelected": "匯入 {{count}} 筆",
+    "importing": "匯入中…"
   }
 }
