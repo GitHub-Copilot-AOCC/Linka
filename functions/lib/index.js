@@ -432,18 +432,15 @@ exports.geminiProxy = (0, https_1.onRequest)({
                     generationConfig: {
                         temperature: 0.3,
                     },
-                    tools: [
-                        {
-                            googleSearchRetrieval: {},
-                        },
-                    ],
+                    tools: [{ googleSearch: {} }],
                 });
                 const apiResult = await model.generateContent({
                     contents: [{ role: "user", parts: [{ text: prompt }] }],
                 });
                 const candidate = apiResult.response.candidates?.[0];
                 const text = apiResult.response.text();
-                const groundingChunks = candidate?.groundingMetadata?.groundingChuncks ?? [];
+                const groundingMetadata = candidate?.groundingMetadata;
+                const groundingChunks = groundingMetadata?.groundingChunks ?? [];
                 const citedUrls = groundingChunks
                     .map((chunk) => chunk.web?.uri)
                     .filter((uri) => typeof uri === "string" && uri.length > 0);
