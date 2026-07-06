@@ -64,6 +64,7 @@
     "sortByName": "依姓名",
     "sortByImportance": "依星級",
     "tagsManager": "標籤管理",
+    "allTags": "全部",
     "empty": "還沒有聯絡人，點右下角按鈕新增第一位。",
     "noResults": "找不到符合「{{keyword}}」的聯絡人。",
     "setReminder": "設定提醒",

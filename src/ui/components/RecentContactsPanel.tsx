@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useContactsStore } from '@ui/store/contactsStore';
 import { recentContacts } from '@domain/contact';
+import { avatarGradientFor } from '@ui/theme/avatarPalette';
 
 interface RecentContactsPanelProps {
   uid: string;
@@ -33,7 +34,16 @@ export function RecentContactsPanel({ uid }: RecentContactsPanelProps) {
               sx={{ display: 'flex', alignItems: 'center', gap: 1.5, cursor: 'pointer' }}
               onClick={() => navigate(`/contacts/${contact.id}`)}
             >
-              <Avatar src={contact.photos?.[0]?.url} sx={{ width: 32, height: 32 }}>
+              <Avatar
+                src={contact.photos?.[0]?.url}
+                sx={{
+                  width: 32,
+                  height: 32,
+                  ...(contact.photos?.[0]?.url
+                    ? {}
+                    : { backgroundImage: avatarGradientFor(contact.id), color: '#fff' }),
+                }}
+              >
                 {contact.name.charAt(0)}
               </Avatar>
               <Box sx={{ flex: 1, minWidth: 0 }}>

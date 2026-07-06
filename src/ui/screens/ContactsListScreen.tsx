@@ -36,6 +36,7 @@ import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import DescriptionIcon from '@mui/icons-material/Description';
 import TravelExploreIcon from '@mui/icons-material/TravelExplore';
+import GridViewIcon from '@mui/icons-material/GridView';
 import { useTranslation } from 'react-i18next';
 import { useContactsStore } from '@ui/store/contactsStore';
 import { useTagsStore } from '@ui/store/tagsStore';
@@ -55,6 +56,9 @@ import { BusinessCardScanDialog } from '@ui/components/BusinessCardScanDialog';
 import { DocumentImportDialog } from '@ui/components/DocumentImportDialog';
 import { QuickCaptureDialog } from '@ui/components/QuickCaptureDialog';
 import { TagMultiSelect } from '@ui/components/TagMultiSelect';
+import { avatarGradientFor } from '@ui/theme/avatarPalette';
+import { tagStyleFor } from '@ui/theme/tagPalette';
+import { PRIMARY_GRADIENT } from '@ui/theme/theme';
 
 interface ContactsListScreenProps {
   uid: string;
@@ -173,17 +177,40 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
 
       {contacts.length > 0 && tags.length > 0 && (
         <Box sx={{ display: 'flex', gap: { xs: 1.25, sm: 1 }, mb: 2, flexWrap: 'wrap' }}>
-          {tags.map((tag) => (
-            <Chip
-              key={tag.id}
-              label={tag.name}
-              size="small"
-              onClick={() => setActiveTagId(activeTagId === tag.id ? null : tag.id)}
-              color={activeTagId === tag.id ? 'primary' : 'default'}
-              variant={activeTagId === tag.id ? 'filled' : 'outlined'}
-              sx={{ fontSize: { xs: '0.9rem', sm: '0.8125rem' }, height: { xs: 32, sm: 24 } }}
-            />
-          ))}
+          <Chip
+            icon={<GridViewIcon sx={{ fontSize: 'inherit !important' }} />}
+            label={t('contacts.allTags')}
+            size="small"
+            onClick={() => setActiveTagId(null)}
+            sx={{
+              fontSize: { xs: '0.9rem', sm: '0.8125rem' },
+              height: { xs: 32, sm: 24 },
+              ...(activeTagId === null
+                ? { backgroundImage: PRIMARY_GRADIENT, color: '#fff', '& .MuiChip-icon': { color: '#fff' } }
+                : { bgcolor: 'action.hover' }),
+            }}
+          />
+          {tags.map((tag) => {
+            const style = tagStyleFor(tag.id);
+            const Icon = style.icon;
+            const active = activeTagId === tag.id;
+            return (
+              <Chip
+                key={tag.id}
+                icon={<Icon sx={{ fontSize: 'inherit !important', color: `${style.fg} !important` }} />}
+                label={tag.name}
+                size="small"
+                onClick={() => setActiveTagId(active ? null : tag.id)}
+                sx={{
+                  fontSize: { xs: '0.9rem', sm: '0.8125rem' },
+                  height: { xs: 32, sm: 24 },
+                  bgcolor: style.bg,
+                  color: style.fg,
+                  border: active ? `2px solid ${style.fg}` : '2px solid transparent',
+                }}
+              />
+            );
+          })}
         </Box>
       )}
 
@@ -224,7 +251,13 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
                   >
                     <Avatar
                       src={contact.photos?.[0]?.url}
-                      sx={{ width: { xs: 48, sm: 40 }, height: { xs: 48, sm: 40 } }}
+                      sx={{
+                        width: { xs: 48, sm: 40 },
+                        height: { xs: 48, sm: 40 },
+                        ...(contact.photos?.[0]?.url
+                          ? {}
+                          : { backgroundImage: avatarGradientFor(contact.id), color: '#fff' }),
+                      }}
                     >
                       {contact.name.charAt(0)}
                     </Avatar>
@@ -250,30 +283,46 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
               </Box>
               <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 0.5, ml: 'auto' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mr: 0.5 }}>
-                  <StarIcon fontSize="small" color={contact.importance >= 4 ? 'warning' : 'disabled'} />
+                  <StarIcon fontSize="small" sx={{ color: contact.importance >= 4 ? '#F9A825' : '#CBD5E0' }} />
                   <Typography variant="body2" sx={{ fontSize: { xs: '0.95rem', sm: '0.875rem' } }}>
                     {contact.importance}
                   </Typography>
                 </Box>
+                {/* 每個操作圖示固定一個淡色圓形底色（使用者提供參考圖的配色風格），方便快速辨識，
+                    提醒圖示設定後改用實心主色標示已啟用狀態。 */}
                 <IconButton
                   aria-label={t('contacts.setReminder')}
                   onClick={() => setReminderContactId(contact.id)}
-                  color={contact.nextContactReminder ? 'primary' : 'default'}
+                  size="small"
+                  sx={
+                    contact.nextContactReminder
+                      ? { bgcolor: 'primary.main', color: '#fff', '&:hover': { bgcolor: 'primary.main' } }
+                      : { bgcolor: '#E3F2FD', color: '#1565C0', '&:hover': { bgcolor: '#D0E8FB' } }
+                  }
                 >
                   <AlarmIcon fontSize="small" />
                 </IconButton>
-                <IconButton aria-label={t('contacts.interactions')} onClick={() => setActiveContactId(contact.id)}>
+                <IconButton
+                  aria-label={t('contacts.interactions')}
+                  onClick={() => setActiveContactId(contact.id)}
+                  size="small"
+                  sx={{ bgcolor: '#E0F2F1', color: '#00695C', '&:hover': { bgcolor: '#CCEBE8' } }}
+                >
                   <HistoryIcon fontSize="small" />
                 </IconButton>
                 <IconButton
                   aria-label={t('contacts.suggestedTopics')}
                   onClick={() => setTopicsContactId(contact.id)}
+                  size="small"
+                  sx={{ bgcolor: '#F3E5F5', color: '#6A1B9A', '&:hover': { bgcolor: '#EAD5EE' } }}
                 >
                   <AutoAwesomeIcon fontSize="small" />
                 </IconButton>
                 <IconButton
                   aria-label={t('contacts.webResearch')}
                   onClick={() => setResearchContactId(contact.id)}
+                  size="small"
+                  sx={{ bgcolor: '#FFF3E0', color: '#EF6C00', '&:hover': { bgcolor: '#FFE7C2' } }}
                 >
                   <TravelExploreIcon fontSize="small" />
                 </IconButton>
@@ -283,6 +332,8 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
                     setMenuAnchor(e.currentTarget);
                     setMenuContactId(contact.id);
                   }}
+                  size="small"
+                  sx={{ bgcolor: '#ECEFF1', color: '#455A64', '&:hover': { bgcolor: '#DDE3E6' } }}
                 >
                   <MoreVertIcon fontSize="small" />
                 </IconButton>

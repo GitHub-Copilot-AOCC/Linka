@@ -3,6 +3,7 @@ import { Box, Chip, TextField } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import { useTranslation } from 'react-i18next';
 import { useTagsStore } from '@ui/store/tagsStore';
+import { tagStyleFor } from '@ui/theme/tagPalette';
 
 interface TagMultiSelectProps {
   uid: string;
@@ -40,15 +41,24 @@ export function TagMultiSelect({ uid, selectedIds, onChange }: TagMultiSelectPro
 
   return (
     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center' }}>
-      {tags.map((tag) => (
-        <Chip
-          key={tag.id}
-          label={tag.name}
-          onClick={() => toggle(tag.id)}
-          color={selectedIds.includes(tag.id) ? 'primary' : 'default'}
-          variant={selectedIds.includes(tag.id) ? 'filled' : 'outlined'}
-        />
-      ))}
+      {tags.map((tag) => {
+        const style = tagStyleFor(tag.id);
+        const Icon = style.icon;
+        const selected = selectedIds.includes(tag.id);
+        return (
+          <Chip
+            key={tag.id}
+            icon={<Icon sx={{ fontSize: 'inherit !important', color: `${style.fg} !important` }} />}
+            label={tag.name}
+            onClick={() => toggle(tag.id)}
+            sx={{
+              bgcolor: style.bg,
+              color: style.fg,
+              border: selected ? `2px solid ${style.fg}` : '2px solid transparent',
+            }}
+          />
+        );
+      })}
       {adding ? (
         <TextField
           size="small"

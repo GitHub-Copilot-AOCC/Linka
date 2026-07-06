@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { useTagsStore } from '@ui/store/tagsStore';
+import { tagStyleFor } from '@ui/theme/tagPalette';
 
 interface TagsManagerDialogProps {
   uid: string;
@@ -59,9 +60,19 @@ export function TagsManagerDialog({ uid, open, onClose }: TagsManagerDialogProps
           </Button>
         </Stack>
         <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
-          {tags.map((tag) => (
-            <Chip key={tag.id} label={tag.name} onDelete={() => remove(uid, tag.id)} />
-          ))}
+          {tags.map((tag) => {
+            const style = tagStyleFor(tag.id);
+            const Icon = style.icon;
+            return (
+              <Chip
+                key={tag.id}
+                icon={<Icon sx={{ fontSize: 'inherit !important', color: `${style.fg} !important` }} />}
+                label={tag.name}
+                onDelete={() => remove(uid, tag.id)}
+                sx={{ bgcolor: style.bg, color: style.fg }}
+              />
+            );
+          })}
         </Stack>
       </DialogContent>
       <DialogActions>

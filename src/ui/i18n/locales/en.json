@@ -64,6 +64,7 @@
     "sortByName": "By name",
     "sortByImportance": "By star",
     "tagsManager": "Manage tags",
+    "allTags": "All",
     "empty": "No contacts yet — tap the button in the corner to add one.",
     "noResults": "No contacts match \"{{keyword}}\".",
     "setReminder": "Set reminder",
