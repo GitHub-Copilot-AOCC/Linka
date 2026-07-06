@@ -29,6 +29,7 @@ import { useContactsStore } from '@ui/store/contactsStore';
 import { createInteraction } from '@data/interactionsRepository';
 import { createLogEntry } from '@data/logsRepository';
 import { updateContact } from '@data/contactsRepository';
+import { startRecording, type AudioRecorderHandle } from '@platform/audioRecorder';
 
 interface QuickCaptureDialogProps {
   uid: string;
@@ -74,8 +75,7 @@ export function QuickCaptureDialog({ uid, contacts, open, onClose }: QuickCaptur
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [audioMimeType, setAudioMimeType] = useState<string>('audio/webm');
   const [selection, setSelection] = useState<PreviewSelectionState>({ reminders: {}, importance: {} });
-  const recorderRef = useRef<MediaRecorder | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
+  const recorderHandleRef = useRef<AudioRecorderHandle | null>(null);
 
   const contactLookup = useMemo(() => new Map(contacts.map((contact) => [contact.id, contact])), [contacts]);
 
@@ -93,8 +93,8 @@ export function QuickCaptureDialog({ uid, contacts, open, onClose }: QuickCaptur
   };
 
   const handleClose = () => {
-    if (isRecording && recorderRef.current) {
-      recorderRef.current.stop();
+    if (isRecording) {
+      recorderHandleRef.current?.stop();
     }
     resetState();
     onClose();
@@ -102,23 +102,7 @@ export function QuickCaptureDialog({ uid, contacts, open, onClose }: QuickCaptur
 
   async function handleStartRecording() {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
-      chunksRef.current = [];
-      recorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          chunksRef.current.push(event.data);
-        }
-      };
-      recorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: recorder.mimeType || 'audio/webm' });
-        setAudioBlob(blob);
-        setAudioMimeType(recorder.mimeType || 'audio/webm');
-        stream.getTracks().forEach((track) => track.stop());
-        setIsRecording(false);
-      };
-      recorderRef.current = recorder;
-      recorder.start();
+      recorderHandleRef.current = await startRecording();
       setAudioBlob(null);
       setIsRecording(true);
       setError(null);
@@ -127,8 +111,12 @@ export function QuickCaptureDialog({ uid, contacts, open, onClose }: QuickCaptur
     }
   }
 
-  function handleStopRecording() {
-    recorderRef.current?.stop();
+  async function handleStopRecording() {
+    if (!recorderHandleRef.current) return;
+    const { blob, mimeType } = await recorderHandleRef.current.stop();
+    setAudioBlob(blob);
+    setAudioMimeType(mimeType);
+    setIsRecording(false);
   }
 
   async function handleGeneratePreview() {
