@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -17,6 +17,7 @@ import { useTranslation } from 'react-i18next';
 import { parseVCardFile, findDuplicateContact } from '@domain/vcard';
 import type { ParsedVCardContact } from '@domain/vcard';
 import { useContactsStore } from '@ui/store/contactsStore';
+import { pickFile } from '@platform/filePicker';
 
 interface ImportContactsDialogProps {
   uid: string;
@@ -31,15 +32,13 @@ interface ImportContactsDialogProps {
 export function ImportContactsDialog({ uid, open, onClose }: ImportContactsDialogProps) {
   const { contacts, add } = useContactsStore();
   const { t } = useTranslation();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [parsed, setParsed] = useState<ParsedVCardContact[]>([]);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
 
-  async function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    e.target.value = '';
+  async function handleFileSelected() {
+    const file = await pickFile({ accept: '.vcf,text/vcard' });
     if (!file) return;
     setError(null);
     try {
@@ -108,10 +107,9 @@ export function ImportContactsDialog({ uid, open, onClose }: ImportContactsDialo
             <Typography color="text.secondary" sx={{ mb: 2 }}>
               {t('import.description')}
             </Typography>
-            <Button variant="contained" onClick={() => fileInputRef.current?.click()}>
+            <Button variant="contained" onClick={handleFileSelected}>
               {t('import.chooseFile')}
             </Button>
-            <input ref={fileInputRef} type="file" accept=".vcf,text/vcard" hidden onChange={handleFileSelected} />
           </>
         ) : (
           <>

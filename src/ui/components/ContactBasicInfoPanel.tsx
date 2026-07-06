@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   TextField,
   Button,
@@ -18,6 +18,7 @@ import { useContactsStore } from '@ui/store/contactsStore';
 import { validateContact, MAX_PHOTOS_PER_CONTACT } from '@domain/contact';
 import type { Contact, ContactPhoto } from '@domain/contact';
 import { compressImage } from '@platform/imageCompression';
+import { pickFile } from '@platform/filePicker';
 import { uploadContactPhoto, removeContactPhoto } from '@data/contactsRepository';
 import { TagMultiSelect } from '@ui/components/TagMultiSelect';
 
@@ -49,7 +50,6 @@ export function ContactBasicInfoPanel({ uid, contact, active }: ContactBasicInfo
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [saved, setSaved] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const contacts = useContactsStore((s) => s.contacts);
   const livePhotos = contacts.find((c) => c.id === contact.id)?.photos ?? contact.photos ?? [];
 
@@ -71,9 +71,8 @@ export function ContactBasicInfoPanel({ uid, contact, active }: ContactBasicInfo
 
   if (!active) return null;
 
-  async function handlePhotoSelected(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    e.target.value = '';
+  async function handlePhotoSelected() {
+    const file = await pickFile({ accept: 'image/*' });
     if (!file) return;
     if (livePhotos.length >= MAX_PHOTOS_PER_CONTACT) {
       setError(t('editContact.maxPhotosError', { max: MAX_PHOTOS_PER_CONTACT }));
@@ -154,14 +153,13 @@ export function ContactBasicInfoPanel({ uid, contact, active }: ContactBasicInfo
         ))}
         {livePhotos.length < MAX_PHOTOS_PER_CONTACT && (
           <IconButton
-            onClick={() => fileInputRef.current?.click()}
+            onClick={handlePhotoSelected}
             disabled={uploading}
             sx={{ width: 64, height: 64, border: '1px dashed', borderColor: 'divider' }}
           >
             {uploading ? <CircularProgress size={20} /> : <AddPhotoAlternateIcon />}
           </IconButton>
         )}
-        <input ref={fileInputRef} type="file" accept="image/*" hidden onChange={handlePhotoSelected} />
       </Box>
 
       <TextField label={t('contacts.name')} fullWidth margin="dense" {...field('name')} />

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -16,6 +16,7 @@ import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import { useTranslation } from 'react-i18next';
 import { useContactsStore } from '@ui/store/contactsStore';
 import { compressImage } from '@platform/imageCompression';
+import { pickFile } from '@platform/filePicker';
 import { scanBusinessCard, GeminiServiceError } from '@services/geminiService';
 import type { BusinessCardFields } from '@domain/businessCard';
 import { findContactsByName } from '@domain/contact';
@@ -46,7 +47,6 @@ function blobToBase64(blob: Blob): Promise<string> {
 export function BusinessCardScanDialog({ uid, open, onClose }: BusinessCardScanDialogProps) {
   const { t } = useTranslation();
   const { add, contacts } = useContactsStore();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [fields, setFields] = useState<BusinessCardFields | null>(null);
   const [loading, setLoading] = useState(false);
@@ -66,9 +66,8 @@ export function BusinessCardScanDialog({ uid, open, onClose }: BusinessCardScanD
     onClose();
   }
 
-  async function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    e.target.value = '';
+  async function handleFileSelected() {
+    const file = await pickFile({ accept: 'image/*', capture: 'environment' });
     if (!file) return;
 
     if (!navigator.onLine) {
@@ -139,20 +138,11 @@ export function BusinessCardScanDialog({ uid, open, onClose }: BusinessCardScanD
             <Typography color="text.secondary" align="center">
               {t('businessCard.description')}
             </Typography>
-            <Button variant="contained" startIcon={<CameraAltIcon />} onClick={() => fileInputRef.current?.click()}>
+            <Button variant="contained" startIcon={<CameraAltIcon />} onClick={handleFileSelected}>
               {t('businessCard.chooseImage')}
             </Button>
           </Box>
         )}
-
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          capture="environment"
-          hidden
-          onChange={handleFileSelected}
-        />
 
         {previewUrl && (
           <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>

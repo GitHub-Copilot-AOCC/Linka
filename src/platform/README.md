@@ -5,7 +5,7 @@
 對照 [spec.md §4、§8.2](../../spec.md) 需要包裝的項目：
 
 - 圖片壓縮／處理（Web：Canvas API；未來 RN：原生圖片處理）
-- 檔案選取（Web：`<input type="file">` / Contact Picker API；未來 RN：原生檔案選取器）
+- 檔案選取（`filePicker.ts`，Web：`<input type="file">`；未來 RN：原生檔案/相機選取器）
 - 通知/提示（Web：站內提示元件；未來 RN：Push Notification）
 - 錄音（§5.3a 語音快速記錄，Web：MediaRecorder API；未來 RN：原生錄音 API）
 

@@ -71,7 +71,7 @@ export function NavShell({ children }: { children: React.ReactNode }) {
       )}
 
       <Box sx={{ flexGrow: 1 }}>
-        <AppBar position="static" color="default" elevation={1}>
+        <AppBar position="static" color="default" elevation={1} sx={{ pt: 'env(safe-area-inset-top)' }}>
           <Toolbar sx={{ justifyContent: 'space-between' }}>
             <Typography variant="h6">{t('nav.appName')}</Typography>
             <SyncStatusChip />
@@ -81,7 +81,7 @@ export function NavShell({ children }: { children: React.ReactNode }) {
         {children}
 
         {!isDesktop && (
-          <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0 }} elevation={3}>
+          <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, pb: 'env(safe-area-inset-bottom)' }} elevation={3}>
             <BottomNavigation
               showLabels
               value={activeIndex}

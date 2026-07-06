@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -26,6 +26,7 @@ import type { ParsedDocumentContact } from '@domain/documentImport';
 import { findDuplicateContact } from '@domain/vcard';
 import { parseContactDocument, GeminiServiceError } from '@services/geminiService';
 import { useContactsStore } from '@ui/store/contactsStore';
+import { pickFile } from '@platform/filePicker';
 
 interface DocumentImportDialogProps {
   uid: string;
@@ -57,7 +58,6 @@ function fileToBase64(file: File): Promise<string> {
 export function DocumentImportDialog({ uid, open, onClose }: DocumentImportDialogProps) {
   const { contacts, add } = useContactsStore();
   const { t } = useTranslation();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [parsed, setParsed] = useState<ParsedDocumentContact[]>([]);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(false);
@@ -77,9 +77,8 @@ export function DocumentImportDialog({ uid, open, onClose }: DocumentImportDialo
     onClose();
   }
 
-  async function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    e.target.value = '';
+  async function handleFileSelected() {
+    const file = await pickFile({ accept: '.pdf,.docx,.xlsx,.csv' });
     if (!file) return;
 
     setError(null);
@@ -168,16 +167,9 @@ export function DocumentImportDialog({ uid, open, onClose }: DocumentImportDialo
             <Typography color="text.secondary" sx={{ mb: 2 }}>
               {t('docImport.description')}
             </Typography>
-            <Button variant="contained" startIcon={<UploadFileIcon />} onClick={() => fileInputRef.current?.click()}>
+            <Button variant="contained" startIcon={<UploadFileIcon />} onClick={handleFileSelected}>
               {t('docImport.chooseFile')}
             </Button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".pdf,.docx,.xlsx,.csv"
-              hidden
-              onChange={handleFileSelected}
-            />
           </>
         )}
 

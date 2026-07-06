@@ -279,7 +279,11 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
                 <Box sx={{ flex: 1, minWidth: 0 }}>
                   {/* 姓名與公司合併成同一行，讓每張卡片固定是「姓名列 + 圖示列」兩行；
                       列表只顯示公司，不顯示職稱（見使用者回報），職稱仍保留在詳情頁。 */}
-                  <Typography variant="subtitle1" noWrap sx={{ fontSize: { xs: '1.15rem', sm: '1rem' } }}>
+                  <Typography
+                    variant="subtitle1"
+                    noWrap
+                    sx={{ fontSize: { xs: '1.15rem', sm: '1rem' } }}
+                  >
                     {contact.name}
                     {contact.company && (
                       <Typography
@@ -453,7 +457,7 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
 
       <Fab
         color="primary"
-        sx={{ position: 'fixed', bottom: 24, right: 24 }}
+        sx={{ position: 'fixed', bottom: 'calc(24px + env(safe-area-inset-bottom))', right: 24 }}
         onClick={() => setQuickCaptureOpen(true)}
         aria-label={t('contacts.quickCapture')}
       >
@@ -463,7 +467,7 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
       <Fab
         color="default"
         size="small"
-        sx={{ position: 'fixed', bottom: 92, right: 28 }}
+        sx={{ position: 'fixed', bottom: 'calc(92px + env(safe-area-inset-bottom))', right: 28 }}
         onClick={() => setDialogOpen(true)}
         aria-label={t('contacts.addContact')}
       >
