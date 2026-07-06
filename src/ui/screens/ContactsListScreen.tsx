@@ -172,7 +172,7 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
       )}
 
       {contacts.length > 0 && tags.length > 0 && (
-        <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
+        <Box sx={{ display: 'flex', gap: { xs: 1.25, sm: 1 }, mb: 2, flexWrap: 'wrap' }}>
           {tags.map((tag) => (
             <Chip
               key={tag.id}
@@ -181,6 +181,7 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
               onClick={() => setActiveTagId(activeTagId === tag.id ? null : tag.id)}
               color={activeTagId === tag.id ? 'primary' : 'default'}
               variant={activeTagId === tag.id ? 'filled' : 'outlined'}
+              sx={{ fontSize: { xs: '0.9rem', sm: '0.8125rem' }, height: { xs: 32, sm: 24 } }}
             />
           ))}
         </Box>
@@ -192,14 +193,16 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
         <Typography color="text.secondary">{t('contacts.noResults', { keyword })}</Typography>
       )}
 
-      <Stack spacing={1.5}>
+      {/* 手機（xs）上放大字體/間距/頭像，讓密集的聯絡人列表在小螢幕上更好讀、觸控範圍更寬鬆
+          （見使用者回報：手機上字體太小）；桌面（sm 以上）維持原本較緊湊的密度不變。 */}
+      <Stack spacing={{ xs: 2, sm: 1.5 }}>
         {visibleContacts.map((contact) => {
           const stale = isLongSilence(latestInteractionByContact.get(contact.id), today);
           return (
           <Card key={contact.id} variant="elevation" elevation={1}>
             {/* flexWrap 讓「姓名區塊」與「操作圖示區塊」在窄螢幕（手機）擠不下同一行時各自換行，
                 避免姓名被壓到只剩幾像素寬、逐字換行的 RWD 版面問題（見使用者回報）。 */}
-            <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+            <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', p: { xs: 2, sm: 2 } }}>
               <Box
                 sx={{
                   display: 'flex',
@@ -219,14 +222,24 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
                     overlap="circular"
                     anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                   >
-                    <Avatar src={contact.photos?.[0]?.url}>{contact.name.charAt(0)}</Avatar>
+                    <Avatar
+                      src={contact.photos?.[0]?.url}
+                      sx={{ width: { xs: 48, sm: 40 }, height: { xs: 48, sm: 40 } }}
+                    >
+                      {contact.name.charAt(0)}
+                    </Avatar>
                   </Badge>
                 </Tooltip>
                 <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <Typography variant="subtitle1" noWrap>
+                  <Typography variant="subtitle1" noWrap sx={{ fontSize: { xs: '1.15rem', sm: '1rem' } }}>
                     {contact.name}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary" noWrap>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    noWrap
+                    sx={{ fontSize: { xs: '0.95rem', sm: '0.875rem' } }}
+                  >
                     {[contact.role, contact.company].filter(Boolean).join(' · ') || ' '}
                   </Typography>
                 </Box>
@@ -234,7 +247,9 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
               <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 0.5, ml: 'auto' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mr: 0.5 }}>
                   <StarIcon fontSize="small" color={contact.importance >= 4 ? 'warning' : 'disabled'} />
-                  <Typography variant="body2">{contact.importance}</Typography>
+                  <Typography variant="body2" sx={{ fontSize: { xs: '0.95rem', sm: '0.875rem' } }}>
+                    {contact.importance}
+                  </Typography>
                 </Box>
                 <IconButton
                   aria-label={t('contacts.setReminder')}
