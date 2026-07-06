@@ -33,9 +33,9 @@
 | §5.3a | AI 語音/文字快速記錄 | Codex 在 `codex/ai-quick-log-and-proactive-reminders` 完成後端 + 前端雛型，但該分支落後 main 太多（拆分導覽/i18n 之前的舊結構），**已手動整合**：後端 `functions/src/index.ts` 的 `parseQuickCapturePreview` action 原封不動採用；前端把 `QuickCaptureDialog`/`ContactInteractionsDialog` 多聯絡人綁定邏輯搬到現在的檔案結構上，補回 i18n（Codex 版本沒有），修正 `<Stack direction="row">` 型別地雷（見 CLAUDE.md §7），服務層與建議話題共用同一個 `geminiService.ts`。**已在真實瀏覽器端到端測過**：文字輸入「今天跟王小明喝咖啡...兩週後提醒我」→ AI 正確比對既有聯絡人、產生互動摘要、推算提醒日期（+14 天）→ 確認寫入後 Interaction 與 `Contact.nextContactReminder` 都正確落地 |
 | §5.6 | AI 主動提醒（生日/久未聯絡） | 後端 `generateProactiveSuggestionsDaily` 排程函式（每日 9:00 Asia/Taipei）已部署；規則邏輯（生日前 3 天、無互動 60 天、去重不重複提醒已標記完成的建議）已 code review 確認符合 spec。前端 `AISuggestionsPanel` 已接進首頁。**已用真實資料端到端驗證通過**：裝了 gcloud CLI 後改用更直接的方式——暫時在 `geminiProxy` 加一個除錯用 action，直接呼叫排程函式背後同一套 `buildRuleBasedSuggestions`/`persistSuggestions`（不是重寫邏輯），部署後對測試帳號觸發一次，成功產生一筆 `manual_reminder_due` 建議並正確寫入 Firestore；首頁「今天需要處理」卡片正確顯示，點「採納」後正確建立 Interaction（`已採納 AI 建議：...`）且清空原本的 `nextContactReminder`。驗證完已移除除錯 action 並重新部署乾淨版本 |
 | §11.4 | 列表久未聯絡色彩警示 | Avatar 右下角紅點 Badge，門檻與 §5.6 共用同一組「無互動 60 天」常數；已在真實瀏覽器測過：把互動改到 60 天前確認 Badge 出現，刪除後確認消失 |
-| §5.5a | AI 問答秘書（聊天） | 三個 agent 平行在獨立 git worktree 開發完成（`planContactQuery`「先查詢」+ `answerContactQuestion`「後生成」二階段設計），新增 `src/domain/assistantChat.ts`、`AssistantChatScreen.tsx`，接進導覽（`/assistant` 路由）。**尚待瀏覽器端到端驗證**（見下方待辦） |
-| §5.7 | 文件通訊錄批次匯入 | 新增 `parseContactDocument` action（`functions/package.json` 加 `pdf-parse`/`mammoth`/`xlsx`），新增 `src/domain/documentImport.ts`、`DocumentImportDialog.tsx`。開發時已手刻 CSV/XLSX/DOCX/PDF 四種測試檔案追蹤解析邏輯確認正確，但 Gemini 呼叫本身與瀏覽器實際操作**尚待驗證**（見下方待辦） |
-| §5.8 | 網路身分研究摘要（僅文字子功能） | 新增 `researchContactProfile` action，使用 Gemini `googleSearchRetrieval` grounding 工具（已對照實際安裝的 SDK 型別定義確認正確語法，非猜測）；新增 `Contact.researchLog`、`ContactResearchDialog.tsx`。**照片搜尋子功能明確不做**（需要額外圖片搜尋 API 憑證）。citation 擷取邏輯與 Gemini 實際呼叫**尚待驗證**（見下方待辦） |
+| §5.5a | AI 問答秘書（聊天） | 三個 agent 平行在獨立 git worktree 開發完成（`planContactQuery`「先查詢」+ `answerContactQuestion`「後生成」二階段設計），新增 `src/domain/assistantChat.ts`、`AssistantChatScreen.tsx`，接進導覽（`/assistant` 路由）。**已在真實瀏覽器測過**：問「我認識哪些在 Google 工作的人？」正確回答並附上聯絡人引用晶片 |
+| §5.7 | 文件通訊錄批次匯入 | 新增 `parseContactDocument` action（`functions/package.json` 加 `pdf-parse`/`mammoth`/`xlsx`），新增 `src/domain/documentImport.ts`、`DocumentImportDialog.tsx`。開發時已手刻 CSV/XLSX/DOCX/PDF 四種測試檔案追蹤解析邏輯確認正確。**已在真實瀏覽器端到端測過**：上傳一份含 2 筆聯絡人的 CSV，AI 100% 正確解析姓名/職稱/公司/電話/Email，預覽確認後正確批次寫入 Firestore |
+| §5.8 | 網路身分研究摘要（僅文字子功能） | 新增 `researchContactProfile` action，使用 Gemini `googleSearchRetrieval` grounding 工具（已對照實際安裝的 SDK 型別定義確認正確語法，非猜測）；新增 `Contact.researchLog`、`ContactResearchDialog.tsx`。**照片搜尋子功能明確不做**（需要額外圖片搜尋 API 憑證）。**實測卡在 Gemini API 429 Too Many Requests**（`googleSearchRetrieval` grounding 工具疑似有獨立於一般文字生成的配額限制，這個 session 已經打了很多次一般 API 但這是第一次用到 grounding 工具就被擋）；錯誤處理本身正確運作（優雅顯示錯誤訊息，未 crash），但**尚未看過成功產生摘要的真實案例**，需要之後確認 Google Cloud Console 的 billing/quota 設定或换個時間點重試 |
 
 ---
 
@@ -43,7 +43,7 @@
 
 | 章節 | 功能 | 依賴/備註 |
 |---|---|---|
-| §5.5a/§5.7/§5.8 | 瀏覽器端到端驗證 | 三個功能都已通過 `tsc`/`build` 靜態檢查與程式碼邏輯審查，但尚未實際部署+瀏覽器操作驗證（下一步） |
+| §5.8 | 網路研究摘要實際成功案例 | `googleSearchRetrieval` grounding 呼叫目前被 Gemini API 擋 429，需確認 Google Cloud Console billing/quota 設定是否需要額外開通，或换時間重試 |
 | §5.8 | 照片搜尋子功能 | 需要額外圖片搜尋 API/憑證（例如 Google Custom Search JSON API + CSE ID），本專案目前未設定，明確排除於本輪開發範圍 |
 | §5.9 | Google 聯絡人 API 匯入 | 需要額外 OAuth scope（People API），vCard 部分已完成 |
 | §8.4 | Stripe 訂閱整合 | 完全沒開始 |
