@@ -3,7 +3,13 @@
 
 <head>
     <meta charset="utf-8" />
-    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <!--
+      關閉雙指/雙擊縮放（maximum-scale=1, user-scalable=no）。找到問題根因：使用者滑動長列表時
+      不小心觸發瀏覽器縮放，導致 window.innerWidth 回報值超過我們手機/桌面版面的判斷門檻（600px），
+      讓程式「正確地」切成桌面版緊湊排版——不是程式錯誤，是被意外縮放觸發的。這個 App 之後會包裝
+      成 iOS App，直接關閉頁面縮放（比照大多數 App 化網頁的做法）從源頭避免同樣狀況再發生。
+    -->
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport" />
     <title>Linka</title>
     <style>
         /*
@@ -15,6 +21,18 @@
         html {
             -webkit-text-size-adjust: 100%;
             text-size-adjust: 100%;
+        }
+
+        /*
+          安全網：避免任何子元素（過長的一排 chip/icon button）把 layout viewport 撐寬，
+          間接讓畫面看起來被縮小。目前已知的 toolbar 都有 flexWrap，理論上不會撐寬，
+          但沒有這層防護時任何未來新增的橫向內容都可能複製同一個問題。
+        */
+        html,
+        body,
+        #root {
+            max-width: 100%;
+            overflow-x: hidden;
         }
     </style>
 </head>
