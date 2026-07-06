@@ -231,16 +231,20 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
                   </Badge>
                 </Tooltip>
                 <Box sx={{ flex: 1, minWidth: 0 }}>
+                  {/* 姓名與職稱/公司合併成同一行，讓每張卡片固定是「姓名列 + 圖示列」兩行，
+                      不會因為有沒有填職稱/公司而變成 2 行或 3 行不一致（見使用者回報）。 */}
                   <Typography variant="subtitle1" noWrap sx={{ fontSize: { xs: '1.15rem', sm: '1rem' } }}>
                     {contact.name}
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    noWrap
-                    sx={{ fontSize: { xs: '0.95rem', sm: '0.875rem' } }}
-                  >
-                    {[contact.role, contact.company].filter(Boolean).join(' · ') || ' '}
+                    {(contact.role || contact.company) && (
+                      <Typography
+                        component="span"
+                        color="text.secondary"
+                        sx={{ fontSize: 'inherit' }}
+                      >
+                        {' · '}
+                        {[contact.role, contact.company].filter(Boolean).join(' · ')}
+                      </Typography>
+                    )}
                   </Typography>
                 </Box>
               </Box>
