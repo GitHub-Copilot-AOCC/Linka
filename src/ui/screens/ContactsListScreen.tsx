@@ -151,7 +151,7 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
       </Box>
 
       {contacts.length > 0 && (
-        <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
+        <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap', width: '100%' }}>
           <TextField
             size="small"
             placeholder={t('contacts.searchPlaceholder')}
@@ -176,7 +176,7 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
       )}
 
       {contacts.length > 0 && tags.length > 0 && (
-        <Box sx={{ display: 'flex', gap: { xs: 1.25, sm: 1 }, mb: 2, flexWrap: 'wrap' }}>
+        <Box sx={{ display: 'flex', gap: { xs: 1.25, sm: 1 }, mb: 2, flexWrap: 'wrap', width: '100%' }}>
           <Chip
             icon={<GridViewIcon sx={{ fontSize: 'inherit !important' }} />}
             label={t('contacts.allTags')}
