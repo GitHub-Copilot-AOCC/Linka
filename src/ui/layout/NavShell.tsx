@@ -78,7 +78,13 @@ export function NavShell({ children }: { children: React.ReactNode }) {
           </Toolbar>
         </AppBar>
 
-        {children}
+        {/*
+          手機寬度時底部有 position:fixed 的導覽列蓋在內容上方，但內容本身沒有預留對應空間，
+          導致頁面捲到底時，最後一段內容（例如儲存按鈕）會被導覽列蓋住、點不到（見使用者回報：
+          捲到底按鈕被遮住、看起來像「彈回去」）。這裡統一在內容區塊底部留一段安全間距，
+          不用每個畫面各自猜要留多少 padding-bottom。
+        */}
+        <Box sx={{ pb: isDesktop ? 0 : 'calc(56px + env(safe-area-inset-bottom, 0px) + 16px)' }}>{children}</Box>
 
         {!isDesktop && (
           <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, pb: 'env(safe-area-inset-bottom)' }} elevation={3}>
