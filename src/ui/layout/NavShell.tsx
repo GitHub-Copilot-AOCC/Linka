@@ -70,7 +70,14 @@ export function NavShell({ children }: { children: React.ReactNode }) {
         </Drawer>
       )}
 
-      <Box sx={{ flexGrow: 1 }}>
+      {/*
+        minWidth:0 是這裡的關鍵：本 Box 是最外層 flex row（line 50）的子元素，flex 子元素預設
+        min-width:auto，代表它「不會縮到比內容本身還窄」。只要內容有一個不換行的長字串（例如
+        長姓名/公司名），這個容器就會被撐到比螢幕寬，連帶讓內部所有 maxWidth:100% 都以「被撐大的
+        寬度」為基準而失效（見使用者多次回報右側被裁切）。加上 minWidth:0 才能讓它縮回實際可用寬度，
+        內部的 overflow-x:hidden 與姓名列的 noWrap 省略號才會真正生效。
+      */}
+      <Box sx={{ flexGrow: 1, minWidth: 0 }}>
         <AppBar position="static" color="default" elevation={1} sx={{ pt: 'env(safe-area-inset-top)' }}>
           <Toolbar sx={{ justifyContent: 'space-between' }}>
             <Typography variant="h6">{t('nav.appName')}</Typography>
