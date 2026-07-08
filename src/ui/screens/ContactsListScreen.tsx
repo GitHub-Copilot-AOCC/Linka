@@ -134,7 +134,10 @@ export function ContactsListScreen({ uid }: ContactsListScreenProps) {
   }
 
   return (
-    <Box sx={{ p: 2, pb: 14 }}>
+    // maxWidth:100% + overflow-x:hidden 當最後一道防線：不管裡面哪個區塊算錯寬度，
+    // 這個畫面本身都絕對不會超出可視範圍（見使用者回報：希望畫面固定大小，不要因為
+    // 聯絡人欄位文字多寡而變動）。
+    <Box sx={{ p: 2, pb: 14, maxWidth: '100%', overflowX: 'hidden' }}>
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
         <Typography variant="h5">{t('contacts.title')}</Typography>
         <Box sx={{ display: 'flex' }}>

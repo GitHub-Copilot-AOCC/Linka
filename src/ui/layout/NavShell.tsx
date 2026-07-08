@@ -84,7 +84,20 @@ export function NavShell({ children }: { children: React.ReactNode }) {
           捲到底按鈕被遮住、看起來像「彈回去」）。這裡統一在內容區塊底部留一段安全間距，
           不用每個畫面各自猜要留多少 padding-bottom。
         */}
-        <Box sx={{ pb: isDesktop ? 0 : 'calc(56px + env(safe-area-inset-bottom, 0px) + 16px)' }}>{children}</Box>
+        {/*
+          maxWidth:100% + overflow-x:hidden 當所有頁面共用的最後一道防線：不管個別畫面內部
+          哪個區塊算錯寬度，內容欄永遠不會超出可視範圍（見使用者回報：希望畫面固定大小，
+          不要因為聯絡人欄位文字多寡而變動）。
+        */}
+        <Box
+          sx={{
+            pb: isDesktop ? 0 : 'calc(56px + env(safe-area-inset-bottom, 0px) + 16px)',
+            maxWidth: '100%',
+            overflowX: 'hidden',
+          }}
+        >
+          {children}
+        </Box>
 
         {!isDesktop && (
           <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, pb: 'env(safe-area-inset-bottom)' }} elevation={3}>
