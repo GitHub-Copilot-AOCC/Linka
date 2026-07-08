@@ -36,16 +36,38 @@ function App() {
   const { t } = useTranslation();
 
   // iOS Safari/WebKit 自 iOS 10 起，pinch 手勢會忽略 viewport meta 的 maximum-scale/user-scalable
-  // 限制（Apple 的無障礙考量），所以光靠 index.html 的 meta 標籤擋不住手機上的 pinch-zoom。實際會
-  // 觸發的是 WebKit 專屬的 gesturestart/gesturechange 事件，直接在這裡 preventDefault 才能真正擋下
-  // 手勢，避免縮放後 WebKit 對 layout viewport 寬度的計算出錯，連動讓 Material breakpoint 誤判成桌面版。
+  // 限制（Apple 的無障礙考量），所以光靠 index.html 的 meta 標籤擋不住手機上的縮放。使用者回報
+  // gesturestart/gesturechange 那次修好後，仍然在滑動列表時偶爾又觸發了縮放（見使用者回報：
+  // 「全部」篩選時畫面右側被裁掉），推測是雙擊縮放（double-tap zoom）——這是跟 pinch 手勢分開的
+  // 另一種 WebKit 內建手勢，gesturestart/gesturechange 攔不到，需要另外用 touchend 時間間隔判斷。
+  // 同時加上 touchmove 多點觸控攔截，多一層防護涵蓋不同 WebKit 版本對 pinch 的實作方式。
   useEffect(() => {
-    const preventPinchZoom = (e: Event) => e.preventDefault();
-    document.addEventListener('gesturestart', preventPinchZoom);
-    document.addEventListener('gesturechange', preventPinchZoom);
+    const preventGestureZoom = (e: Event) => e.preventDefault();
+    document.addEventListener('gesturestart', preventGestureZoom);
+    document.addEventListener('gesturechange', preventGestureZoom);
+
+    let lastTouchEnd = 0;
+    const preventDoubleTapZoom = (e: TouchEvent) => {
+      const now = Date.now();
+      if (now - lastTouchEnd <= 350) {
+        e.preventDefault();
+      }
+      lastTouchEnd = now;
+    };
+    document.addEventListener('touchend', preventDoubleTapZoom, { passive: false });
+
+    const preventMultiTouchZoom = (e: TouchEvent) => {
+      if (e.touches.length > 1) {
+        e.preventDefault();
+      }
+    };
+    document.addEventListener('touchmove', preventMultiTouchZoom, { passive: false });
+
     return () => {
-      document.removeEventListener('gesturestart', preventPinchZoom);
-      document.removeEventListener('gesturechange', preventPinchZoom);
+      document.removeEventListener('gesturestart', preventGestureZoom);
+      document.removeEventListener('gesturechange', preventGestureZoom);
+      document.removeEventListener('touchend', preventDoubleTapZoom);
+      document.removeEventListener('touchmove', preventMultiTouchZoom);
     };
   }, []);
 
