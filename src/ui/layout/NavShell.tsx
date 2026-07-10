@@ -20,6 +20,7 @@ import ChatIcon from '@mui/icons-material/Chat';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { SyncStatusChip } from '@ui/components/SyncStatusChip';
+import { TRANSLUCENT_SURFACE } from '@ui/theme/theme';
 
 const RAIL_WIDTH = 88;
 
@@ -78,7 +79,17 @@ export function NavShell({ children }: { children: React.ReactNode }) {
         內部的 overflow-x:hidden 與姓名列的 noWrap 省略號才會真正生效。
       */}
       <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-        <AppBar position="static" color="default" elevation={1} sx={{ pt: 'env(safe-area-inset-top)' }}>
+        {/*
+          position:sticky（而非原本的 static）讓內容能從 AppBar 底下捲過，才符合套用半透明
+          毛玻璃材質的前提（apple-design 第 12 條）；否則 AppBar 只是隨頁面捲走，底下不會有
+          內容可以透出來，backdrop-filter 形同虛設。
+        */}
+        <AppBar
+          position="sticky"
+          color="default"
+          elevation={0}
+          sx={{ top: 0, pt: 'env(safe-area-inset-top)', borderBottom: '1px solid rgba(0,0,0,0.06)' }}
+        >
           <Toolbar sx={{ justifyContent: 'space-between' }}>
             <Typography variant="h6">{t('nav.appName')}</Typography>
             <SyncStatusChip />
@@ -107,11 +118,23 @@ export function NavShell({ children }: { children: React.ReactNode }) {
         </Box>
 
         {!isDesktop && (
-          <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, pb: 'env(safe-area-inset-bottom)' }} elevation={3}>
+          <Paper
+            sx={{
+              position: 'fixed',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              pb: 'env(safe-area-inset-bottom)',
+              borderTop: '1px solid rgba(0,0,0,0.06)',
+              ...TRANSLUCENT_SURFACE,
+            }}
+            elevation={0}
+          >
             <BottomNavigation
               showLabels
               value={activeIndex}
               onChange={(_, newValue) => navigate(DESTINATIONS[newValue].path)}
+              sx={{ bgcolor: 'transparent' }}
             >
               {DESTINATIONS.map((d) => (
                 <BottomNavigationAction key={d.path} label={d.label} icon={d.icon} />
