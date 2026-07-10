@@ -92,10 +92,13 @@
     "title": "編輯 {{name}}",
     "importance": "重要性星級",
     "photos": "照片（最多 {{max}} 張）",
+    "removePhoto": "移除照片",
     "role": "職稱",
     "phone": "電話",
     "birthday": "生日",
     "linkedin": "LinkedIn",
+    "facebook": "Facebook",
+    "twitter": "Twitter",
     "notes": "備註",
     "tags": "標籤",
     "maxPhotosError": "最多只能有 {{max}} 張照片，請先移除一張"
@@ -166,12 +169,17 @@
   },
   "contactResearch": {
     "title": "{{name}} 的網路研究摘要",
-    "disclaimer": "此摘要由 AI 自動搜尋網路公開資訊產生，可能不準確，或誤植為同名同姓的其他人，請務必自行查證來源後再參考使用。",
+    "disclaimer": "此摘要由 AI 自動搜尋網路公開資訊產生（包含 LinkedIn、Facebook 等社群媒體），可能不準確，或誤植為同名同姓的其他人，請務必自行查證來源後再參考使用。",
     "search": "搜尋網路資料",
     "searchAgain": "再次搜尋",
     "sources": "來源：",
     "empty": "尚無研究紀錄，點擊「搜尋網路資料」開始第一次搜尋。",
-    "genericError": "搜尋失敗，請稍後再試。"
+    "genericError": "搜尋失敗，請稍後再試。",
+    "fieldsFoundTitle": "找到以下資料，是否要更新聯絡人資料？",
+    "fieldChangeFrom": "目前：{{value}}",
+    "fieldEmptyValue": "(空白)",
+    "applyFields": "套用",
+    "dismissFields": "忽略"
   },
   "businessCard": {
     "menuLabel": "掃描名片",

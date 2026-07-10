@@ -198,6 +198,25 @@ export function ContactBasicInfoPanel({ uid, contact, active }: ContactBasicInfo
           >
             {contact.name.charAt(0)}
           </Avatar>
+          {heroPhoto && (
+            <IconButton
+              aria-label={t('editContact.removePhoto')}
+              onClick={() => handleRemovePhoto(heroPhoto)}
+              size="small"
+              sx={{
+                position: 'absolute',
+                top: -2,
+                right: -2,
+                bgcolor: 'background.paper',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
+                width: 28,
+                height: 28,
+                '&:hover': { bgcolor: 'background.paper' },
+              }}
+            >
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          )}
           <IconButton
             onClick={handlePhotoSelected}
             disabled={uploading || livePhotos.length >= MAX_PHOTOS_PER_CONTACT}

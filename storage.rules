@@ -7,9 +7,13 @@ service firebase.storage {
   match /b/{bucket}/o {
     match /users/{uid}/contacts/{contactId}/photos/{photoId} {
       allow read: if request.auth != null && request.auth.uid == uid;
-      allow write: if request.auth != null && request.auth.uid == uid
+      // create/update 才有 request.resource（上傳後的檔案），需檢查大小與型別；
+      // delete 的 request.resource 恆為 null，混在同一個 write 規則裡會讓刪除永遠被拒絕
+      // （曾經導致「上傳後無法取消照片」的問題），故拆成獨立規則，delete 只檢查擁有者。
+      allow create, update: if request.auth != null && request.auth.uid == uid
         && request.resource.size < 10 * 1024 * 1024
         && request.resource.contentType.matches('image/.*');
+      allow delete: if request.auth != null && request.auth.uid == uid;
     }
 
     // 其他路徑一律拒絕，避免預設開放。
