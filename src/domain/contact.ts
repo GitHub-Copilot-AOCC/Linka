@@ -17,6 +17,11 @@ export interface ResearchEntry {
   summary: string; // AI 產生的摘要文章內容（查無資料時為明確的「查無相關資料」訊息）
   sourceUrls: string[]; // 摘要所引用的來源網址
   createdAt: number; // epoch ms，用於呈現時間軸
+  // 這次搜尋額外找到、可能可以補進聯絡人資料的欄位（見 spec.md §5.8 擴充：明確搜尋
+  // LinkedIn/Facebook 等社群媒體）。純記錄用途——是否真的寫回 Contact 對應欄位，
+  // 需要使用者在 UI 上逐項確認，不會自動覆蓋（iOS 版目前已有這個確認 UI；Web 版
+  // 這次先只同步 domain 層，確認/寫入 UI 待補）。
+  extractedFields?: Partial<Pick<Contact, 'role' | 'company' | 'linkedin' | 'facebook' | 'twitter' | 'birthday'>>;
 }
 
 export interface Contact {
