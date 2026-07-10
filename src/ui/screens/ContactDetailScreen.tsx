@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Box, Tabs, Tab, Typography, IconButton } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -23,7 +23,18 @@ export function ContactDetailScreen({ uid }: ContactDetailScreenProps) {
   const navigate = useNavigate();
   const { contactId } = useParams<{ contactId: string }>();
   const contact = useContactsStore((s) => s.contacts.find((c) => c.id === contactId));
+  const subscribe = useContactsStore((s) => s.subscribe);
   const [tab, setTab] = useState<TabKey>('basic');
+
+  // 這一頁進來前通常是從 ContactsListScreen 點進來的，但這裡是獨立路由，list 頁會
+  // unmount、連帶把它的 subscribe() 訂閱也取消掉。這一頁本身沒有自己的訂閱的話，
+  // contacts store 就會停在離開列表頁那一刻的舊資料，導致「網路研究摘要」分頁按
+  // 套用寫回 company/role 等欄位後，切到「基本資料」分頁還是看到套用前的舊值
+  // （見使用者回報）。
+  useEffect(() => {
+    if (!uid) return;
+    return subscribe(uid);
+  }, [uid, subscribe]);
 
   if (!contact) {
     return (

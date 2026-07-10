@@ -109,6 +109,11 @@ export function ContactBasicInfoPanel({ uid, contact, active }: ContactBasicInfo
   const extraPhotos = livePhotos.slice(1);
 
   // 切換聯絡人（例如從列表點進不同人）時，表單需要重新以該聯絡人的資料初始化。
+  // 依賴項也要包含各欄位本身的值，不能只看 contact.id：因為「網路研究摘要」分頁
+  // 跟這個表單是同時掛載的（見 ContactDetailScreen，切分頁只是切換 active，不會
+  // remount），使用者在研究分頁按「套用」寫回 role/company 等欄位後，如果這裡只看
+  // contact.id，表單就不會跟著更新，切回「基本資料」分頁會看到還沒套用前的舊值
+  // （見使用者回報：套用後公司/職稱等欄位沒有更新）。
   useEffect(() => {
     setForm({
       name: contact.name,
@@ -122,7 +127,19 @@ export function ContactBasicInfoPanel({ uid, contact, active }: ContactBasicInfo
     });
     setImportance(contact.importance);
     setTagIds(contact.tags ?? []);
-  }, [contact.id]);
+  }, [
+    contact.id,
+    contact.name,
+    contact.role,
+    contact.company,
+    contact.phone,
+    contact.email,
+    contact.birthday,
+    contact.linkedin,
+    contact.notes,
+    contact.importance,
+    contact.tags,
+  ]);
 
   if (!active) return null;
 
