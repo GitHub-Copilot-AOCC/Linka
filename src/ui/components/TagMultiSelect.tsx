@@ -43,19 +43,17 @@ export function TagMultiSelect({ uid, selectedIds, onChange }: TagMultiSelectPro
     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center' }}>
       {tags.map((tag) => {
         const style = tagStyleFor(tag.id);
-        const Icon = style.icon;
         const selected = selectedIds.includes(tag.id);
         return (
           <Chip
             key={tag.id}
-            icon={<Icon sx={{ fontSize: 'inherit !important', color: `${style.fg} !important` }} />}
             label={tag.name}
             onClick={() => toggle(tag.id)}
-            sx={{
-              bgcolor: style.bg,
-              color: style.fg,
-              border: selected ? `2px solid ${style.fg}` : '2px solid transparent',
-            }}
+            sx={
+              selected
+                ? { bgcolor: 'primary.main', color: '#fff' }
+                : { bgcolor: style.bg, color: style.fg }
+            }
           />
         );
       })}

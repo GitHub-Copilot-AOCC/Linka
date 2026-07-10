@@ -78,6 +78,12 @@ export function isLongSilence(latestInteractionDate: string | undefined, todayIs
   return days >= LONG_SILENCE_DAYS;
 }
 
+/** 久未聯絡的聯絡人數量，供首頁/AI 助理儀表板的「最近沒聯絡」統計卡使用。 */
+export function countLongSilenceContacts(contactIds: string[], interactions: Interaction[], todayIso: string): number {
+  const latestByContact = latestInteractionDateByContactId(interactions);
+  return contactIds.filter((id) => isLongSilence(latestByContact.get(id), todayIso)).length;
+}
+
 /** 依日期新到舊排序，取前 limit 筆，供首頁「最近的互動紀錄」使用。 */
 export function recentInteractions(interactions: Interaction[], limit = 5): Interaction[] {
   return [...interactions]

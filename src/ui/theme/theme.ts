@@ -1,11 +1,18 @@
 import { createTheme } from '@mui/material/styles';
 
-// 視覺重新設計（使用者提供參考圖，見對話紀錄）：走 iOS 風格——大圓角、柔和陰影、飽和但不刺眼的
-// 漸層色彩。字體堆疊把 -apple-system 放最前面，未來包裝成 iOS App 時會自動吃到系統 SF 字體。
-// v1 先用單一 seed color 手動定義 primary/secondary，未來可換成完整 M3 tonal palette 產生器。
-const PRIMARY = '#5B5FEF'; // 靛藍偏紫，對應參考圖「全部」晶片與 FAB 的漸層起色
-const PRIMARY_LIGHT = '#4F8EF7'; // 漸層終色（藍）
+// 視覺重新設計 v2（使用者提供完整逐頁 mockup + 設計系統規格，見對話紀錄）：
+// 色彩收斂到 4 色 + 灰階（不再是每個標籤/圖示各自配色的繽紛版本），字級照 mockup 附的
+// SF Pro 字級表（34 Bold / 22 Semibold / 17 Regular / 13 Regular），卡片圓角 16pt、
+// 陰影 0 4 20 rgba(0,0,0,0.06)。字體堆疊把 -apple-system 放最前面，未來包裝成 iOS App
+// 時會自動吃到系統 SF 字體。
+const PRIMARY = '#6C63FF';
+const PRIMARY_LIGHT = '#A78BFA'; // 設計系統的「輔助色」，也當作漸層終色使用
+const SUCCESS = '#34C759';
+const WARNING = '#FF9F0A';
+const BACKGROUND = '#F2F2F7';
+const TEXT_SECONDARY = '#8E8E93';
 export const PRIMARY_GRADIENT = `linear-gradient(135deg, ${PRIMARY} 0%, ${PRIMARY_LIGHT} 100%)`;
+export const PRIMARY_SOFT = 'rgba(108, 99, 255, 0.1)'; // AI 建議卡等淡紫底色
 
 // 質感升級（見 emil-design-eng / apple-design skill 的具體建議，使用者要求套用到 web 版）：
 // MUI 內建的 easing 太弱，缺乏「刻意感」；改用強一點的自訂曲線。進場/離場用 easeOut（開始快、
@@ -25,10 +32,16 @@ export const TRANSLUCENT_SURFACE = {
 export const theme = createTheme({
   palette: {
     primary: { main: PRIMARY, light: PRIMARY_LIGHT },
-    secondary: { main: '#FF9F43' },
+    secondary: { main: PRIMARY_LIGHT },
+    success: { main: SUCCESS },
+    warning: { main: WARNING },
     error: { main: '#ba1a1a' },
+    text: {
+      primary: '#1C1C28',
+      secondary: TEXT_SECONDARY,
+    },
     background: {
-      default: '#F5F5FC',
+      default: BACKGROUND,
       paper: '#FFFFFF',
     },
   },
@@ -38,8 +51,13 @@ export const theme = createTheme({
   typography: {
     fontFamily:
       '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", "Roboto", "Noto Sans TC", sans-serif',
-    h5: { letterSpacing: '-0.02em' }, // 大標題收緊字距（apple-design 第 15 條：字級越大，字距越緊）
-    h6: { letterSpacing: '-0.01em' },
+    // 對照使用者提供的字級表：34 Bold（大標題）/ 22 Semibold（區塊標題）/ 17 Regular（內文）/
+    // 13 Regular（輔助文字）。h4 當首頁問候語等大標題，h6 當區塊標題，body1 當內文。
+    h4: { fontSize: '2.125rem', fontWeight: 700, letterSpacing: '-0.02em' }, // 34px
+    h5: { fontSize: '1.5rem', fontWeight: 700, letterSpacing: '-0.02em' },
+    h6: { fontSize: '1.375rem', fontWeight: 600, letterSpacing: '-0.01em' }, // 22px
+    body1: { fontSize: '1.0625rem' }, // 17px
+    caption: { fontSize: '0.8125rem' }, // 13px
   },
   transitions: {
     easing: {
@@ -64,8 +82,8 @@ export const theme = createTheme({
     MuiCard: {
       styleOverrides: {
         root: {
-          borderRadius: 20,
-          boxShadow: '0 4px 16px rgba(60, 60, 120, 0.08)',
+          borderRadius: 16,
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.06)',
         },
       },
     },

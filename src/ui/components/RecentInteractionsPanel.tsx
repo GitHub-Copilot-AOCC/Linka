@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { Card, CardContent, Typography, Stack, Box, Chip } from '@mui/material';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { useContactsStore } from '@ui/store/contactsStore';
 import { useInteractionsStore } from '@ui/store/interactionsStore';
 import { recentInteractions } from '@domain/interaction';
@@ -14,6 +15,7 @@ export function RecentInteractionsPanel({ uid }: RecentInteractionsPanelProps) {
   const contacts = useContactsStore((s) => s.contacts);
   const { all, subscribeAll } = useInteractionsStore();
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   useEffect(() => subscribeAll(uid), [uid, subscribeAll]);
 
@@ -30,9 +32,16 @@ export function RecentInteractionsPanel({ uid }: RecentInteractionsPanelProps) {
   return (
     <Card sx={{ m: 2, mb: 0 }} elevation={2}>
       <CardContent>
-        <Typography variant="subtitle1" sx={{ mb: 1 }}>
-          {t('dashboard.recentInteractionsTitle')}
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+          <Typography variant="subtitle1">{t('dashboard.recentInteractionsTitle')}</Typography>
+          <Typography
+            variant="caption"
+            sx={{ color: 'primary.main', fontWeight: 700, cursor: 'pointer' }}
+            onClick={() => navigate('/contacts')}
+          >
+            {t('dashboard.viewAll')}
+          </Typography>
+        </Box>
         <Stack spacing={1.5}>
           {recent.map((interaction) => (
             <Box key={interaction.id}>

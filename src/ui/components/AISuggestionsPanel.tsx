@@ -1,10 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
+  Avatar,
   Box,
   Button,
-  Card,
-  CardContent,
-  Chip,
   Dialog,
   DialogActions,
   DialogContent,
@@ -14,7 +12,6 @@ import {
   Typography,
 } from '@mui/material';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
-import CheckIcon from '@mui/icons-material/Check';
 import EditIcon from '@mui/icons-material/Edit';
 import CloseIcon from '@mui/icons-material/Close';
 import { useTranslation } from 'react-i18next';
@@ -22,6 +19,8 @@ import type { AgentSuggestion } from '@domain/agentSuggestion';
 import { todayDateString } from '@domain/interaction';
 import { useContactsStore } from '@ui/store/contactsStore';
 import { useSuggestionsStore } from '@ui/store/suggestionsStore';
+import { avatarGradientFor } from '@ui/theme/avatarPalette';
+import { PRIMARY_SOFT } from '@ui/theme/theme';
 
 interface AISuggestionsPanelProps {
   uid: string;
@@ -56,80 +55,91 @@ export function AISuggestionsPanel({ uid }: AISuggestionsPanelProps) {
 
   return (
     <>
-      <Card sx={{ m: 2, mb: 0 }} elevation={2}>
-        <CardContent>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-            <AutoAwesomeIcon color="primary" fontSize="small" />
-            <Typography variant="subtitle1">{t('aiSuggestions.title')}</Typography>
-          </Box>
-
-          <Stack spacing={1.5}>
-            {pendingSuggestions.map((suggestion) => {
-              const contact = contactLookup.get(suggestion.contactId);
-              return (
-                <Box
-                  key={suggestion.id}
+      {/*
+        視覺重新設計 v2（見使用者提供的設計 mockup）：AI 建議從「清單卡片」改成醒目的
+        淡紫漸層 Hero 卡，頭像 + 訊息 + 一個主要動作按鈕（建立提醒），修改/忽略降為次要
+        文字按鈕。多筆待處理建議時，每筆各自一張 Hero 卡、直向堆疊，保留完整功能。
+      */}
+      <Stack spacing={1.5} sx={{ px: 2, pt: 2 }}>
+        {pendingSuggestions.map((suggestion) => {
+          const contact = contactLookup.get(suggestion.contactId);
+          return (
+            <Box
+              key={suggestion.id}
+              sx={{
+                borderRadius: 4,
+                p: 2,
+                background: `linear-gradient(180deg, ${PRIMARY_SOFT}, transparent)`,
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                <AutoAwesomeIcon color="primary" fontSize="small" />
+                <Typography variant="subtitle2" sx={{ color: 'primary.main', fontWeight: 700 }}>
+                  {t('aiSuggestions.title')} · {TYPE_LABEL[suggestion.type]}
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <Avatar
+                  src={contact?.photos?.[0]?.url}
                   sx={{
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    borderRadius: 2,
-                    p: 1.5,
+                    width: 44,
+                    height: 44,
+                    ...(contact?.photos?.[0]?.url
+                      ? {}
+                      : { backgroundImage: avatarGradientFor(suggestion.contactId), color: '#fff' }),
                   }}
                 >
-                  <Box sx={{ display: 'flex', gap: 2, justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <Box sx={{ flex: 1 }}>
-                      <Typography variant="subtitle2">
-                        {contact?.name ?? t('aiSuggestions.unknownContact')} · {TYPE_LABEL[suggestion.type]}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                        {suggestion.message}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.75 }}>
-                        {t('aiSuggestions.triggerDate', { date: suggestion.triggerDate })}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                      <Chip
-                        icon={<CheckIcon />}
-                        label={t('aiSuggestions.adopt')}
-                        color="primary"
-                        variant="filled"
-                        onClick={() =>
-                          complete(uid, suggestion, contact?.name ?? '', {
-                            description: t('aiSuggestions.adoptedDescription', { message: suggestion.message }),
-                          })
-                        }
-                      />
-                      <Chip
-                        icon={<EditIcon />}
-                        label={t('aiSuggestions.edit')}
-                        variant="outlined"
-                        onClick={() =>
-                          setEditState({
-                            suggestion,
-                            description: suggestion.message,
-                            date: todayDateString(),
-                            nextContactReminder:
-                              suggestion.type === 'manual_reminder_due'
-                                ? ''
-                                : (contact?.nextContactReminder ?? ''),
-                          })
-                        }
-                      />
-                      <Chip
-                        icon={<CloseIcon />}
-                        label={t('aiSuggestions.dismiss')}
-                        variant="outlined"
-                        onClick={() => dismiss(uid, suggestion.id)}
-                      />
-                    </Box>
-                  </Box>
+                  {(contact?.name ?? '?').charAt(0)}
+                </Avatar>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography variant="subtitle1" noWrap sx={{ fontWeight: 700 }}>
+                    {contact?.name ?? t('aiSuggestions.unknownContact')}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {suggestion.message}
+                  </Typography>
                 </Box>
-              );
-            })}
-          </Stack>
-        </CardContent>
-      </Card>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1.5 }}>
+                <Button
+                  variant="contained"
+                  size="small"
+                  onClick={() =>
+                    complete(uid, suggestion, contact?.name ?? '', {
+                      description: t('aiSuggestions.adoptedDescription', { message: suggestion.message }),
+                    })
+                  }
+                >
+                  {t('aiSuggestions.adopt')}
+                </Button>
+                <Button
+                  size="small"
+                  startIcon={<EditIcon fontSize="small" />}
+                  onClick={() =>
+                    setEditState({
+                      suggestion,
+                      description: suggestion.message,
+                      date: todayDateString(),
+                      nextContactReminder:
+                        suggestion.type === 'manual_reminder_due' ? '' : (contact?.nextContactReminder ?? ''),
+                    })
+                  }
+                >
+                  {t('aiSuggestions.edit')}
+                </Button>
+                <Button
+                  size="small"
+                  color="inherit"
+                  startIcon={<CloseIcon fontSize="small" />}
+                  onClick={() => dismiss(uid, suggestion.id)}
+                >
+                  {t('aiSuggestions.dismiss')}
+                </Button>
+              </Box>
+            </Box>
+          );
+        })}
+      </Stack>
 
       <Dialog open={Boolean(editState)} onClose={() => setEditState(null)} fullWidth maxWidth="sm">
         <DialogTitle>{t('aiSuggestions.editTitle')}</DialogTitle>

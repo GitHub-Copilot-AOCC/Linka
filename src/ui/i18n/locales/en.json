@@ -47,11 +47,19 @@
   "dashboard": {
     "title": "Home",
     "noReminders": "Nothing to follow up on today.",
-    "upcomingBirthdaysTitle": "Upcoming birthdays",
-    "birthdayToday": "Birthday today!",
-    "daysUntilBirthday": "in {{days}} days",
-    "recentContactsTitle": "Recently added contacts",
-    "recentInteractionsTitle": "Recent interactions"
+    "recentInteractionsTitle": "Recent interactions",
+    "greeting": {
+      "morning": "Good morning, {{name}}",
+      "afternoon": "Good afternoon, {{name}}",
+      "evening": "Good evening, {{name}}"
+    },
+    "subtitle": "Your AI assistant has today's summary ready",
+    "todaySummary": "Today's summary",
+    "statRecentContacts": "Recently added",
+    "statInteractions": "Interactions",
+    "statBirthdays": "Birthdays this month",
+    "statImportant": "Important contacts",
+    "viewAll": "View ›"
   },
   "reminders": {
     "title": "People to contact today",
@@ -239,7 +247,19 @@
     "thinking": "The assistant is thinking…",
     "assistantLabel": "AI Assistant",
     "citationWithDate": "{{name}} ({{date}})",
-    "genericError": "Something went wrong. Please try again."
+    "genericError": "Something went wrong. Please try again.",
+    "greeting": "Hi, I'm your AI assistant 👋",
+    "greetingSub": "I can help you manage your network and stay closer to people",
+    "suggestionsTitle": "You can ask me",
+    "suggestVipQuiet": "Which VIPs haven't I contacted recently?",
+    "suggestBirthdaysUpcoming": "Whose birthday is coming up?",
+    "suggestRecentSummary": "Summarize my recent interactions",
+    "suggestSameCompany": "Which contacts work at the same company?",
+    "quickActionsTitle": "Quick actions",
+    "quickActionQuiet": "Gone quiet",
+    "quickActionBirthday": "Birthdays this month",
+    "quickActionImportant": "Important contacts",
+    "quickActionInteractions": "Total interactions"
   },
   "docImport": {
     "menuLabel": "Import from document",

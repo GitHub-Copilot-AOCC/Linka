@@ -47,11 +47,19 @@
   "dashboard": {
     "title": "首頁",
     "noReminders": "今天沒有需要處理的提醒。",
-    "upcomingBirthdaysTitle": "即將到來的生日",
-    "birthdayToday": "今天生日！",
-    "daysUntilBirthday": "{{days}} 天後",
-    "recentContactsTitle": "最近新增的聯絡人",
-    "recentInteractionsTitle": "最近的互動紀錄"
+    "recentInteractionsTitle": "最近互動紀錄",
+    "greeting": {
+      "morning": "早安，{{name}}",
+      "afternoon": "午安，{{name}}",
+      "evening": "晚安，{{name}}"
+    },
+    "subtitle": "AI 助理已為你準備好今日摘要",
+    "todaySummary": "今日摘要",
+    "statRecentContacts": "最近新增",
+    "statInteractions": "互動紀錄",
+    "statBirthdays": "本月生日",
+    "statImportant": "重要聯絡人",
+    "viewAll": "查看 ›"
   },
   "reminders": {
     "title": "今天該聯絡的人",
@@ -232,14 +240,26 @@
     "importSelected": "匯入 {{count}} 筆"
   },
   "assistantChat": {
-    "title": "AI 秘書問答",
+    "title": "AI 助理",
     "emptyHint": "問我任何關於你人脈資料庫的問題，例如「我上次跟王小明見面聊了什麼」或「我認識哪些在 Google 工作的人」。",
     "inputPlaceholder": "輸入你的問題…",
     "send": "送出",
     "thinking": "AI 秘書思考中…",
     "assistantLabel": "AI 秘書",
     "citationWithDate": "{{name}}（{{date}}）",
-    "genericError": "問答失敗，請稍後再試。"
+    "genericError": "問答失敗，請稍後再試。",
+    "greeting": "Hi，我是你的 AI 助理 👋",
+    "greetingSub": "我可以幫你管理人脈，讓關係更緊密",
+    "suggestionsTitle": "你可以問我",
+    "suggestVipQuiet": "哪些 VIP 最近沒聯絡？",
+    "suggestBirthdaysUpcoming": "最近誰生日？",
+    "suggestRecentSummary": "最近的互動紀錄摘要？",
+    "suggestSameCompany": "我認識哪些聯絡人是同一間公司的？",
+    "quickActionsTitle": "快速操作",
+    "quickActionQuiet": "最近沒聯絡",
+    "quickActionBirthday": "本月生日",
+    "quickActionImportant": "重要聯絡人",
+    "quickActionInteractions": "累計互動次數"
   },
   "docImport": {
     "menuLabel": "從文件匯入",

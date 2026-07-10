@@ -9,25 +9,46 @@ import {
   CircularProgress,
   Alert,
   Chip,
+  Avatar,
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import PersonOffIcon from '@mui/icons-material/PersonOff';
+import CakeIcon from '@mui/icons-material/Cake';
+import StarIcon from '@mui/icons-material/Star';
+import ForumIcon from '@mui/icons-material/Forum';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@ui/store/authStore';
 import { useContactsStore } from '@ui/store/contactsStore';
+import { useInteractionsStore } from '@ui/store/interactionsStore';
 import { fetchInteractionsForContacts } from '@data/interactionsRepository';
 import { planContactQuery, answerContactQuestion, GeminiServiceError } from '@services/geminiService';
 import { selectRelevantContacts, toContactLite, type ChatMessage } from '@domain/assistantChat';
+import { countBirthdaysThisMonth, countImportantContacts } from '@domain/contact';
+import { countLongSilenceContacts, todayDateString } from '@domain/interaction';
+import { PRIMARY_GRADIENT, PRIMARY_SOFT } from '@ui/theme/theme';
+
+const SUGGESTED_QUESTIONS_KEYS = [
+  'suggestVipQuiet',
+  'suggestBirthdaysUpcoming',
+  'suggestRecentSummary',
+  'suggestSameCompany',
+] as const;
 
 /**
  * AI 個人秘書問答模式（見 spec.md §5.5a、§11.2 導覽目的地「AI 秘書問答」）。
  * 兩階段「先查詢、後生成」：先呼叫 planContactQuery 判斷相關聯絡人，
  * 再用線索從 Firestore 撈出子集，最後呼叫 answerContactQuestion 生成有引用來源的回答。
+ * 視覺重新設計 v2（見使用者提供的設計 mockup）：空狀態不再是空白對話框，改成「猜你想問」
+ * 建議晶片 + 快速統計，降低使用者自己想 prompt 的門檻。
  */
 export function AssistantChatScreen() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { user } = useAuthStore();
   const { contacts, subscribe } = useContactsStore();
+  const { all: interactions, subscribeAll: subscribeInteractions } = useInteractionsStore();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -40,11 +61,15 @@ export function AssistantChatScreen() {
   }, [user, subscribe]);
 
   useEffect(() => {
+    if (!user) return;
+    return subscribeInteractions(user.uid);
+  }, [user, subscribeInteractions]);
+
+  useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
 
-  async function handleSend() {
-    const question = input.trim();
+  async function ask(question: string) {
     if (!question || !user || loading) return;
 
     setMessages((prev) => [...prev, { role: 'user', text: question }]);
@@ -75,6 +100,22 @@ export function AssistantChatScreen() {
 
   if (!user) return null;
 
+  const today = todayDateString();
+  const longSilenceCount = countLongSilenceContacts(
+    contacts.map((c) => c.id),
+    interactions,
+    today
+  );
+  const birthdayCount = countBirthdaysThisMonth(contacts, today);
+  const importantCount = countImportantContacts(contacts);
+
+  const quickActions = [
+    { icon: PersonOffIcon, label: t('assistantChat.quickActionQuiet'), value: longSilenceCount },
+    { icon: CakeIcon, label: t('assistantChat.quickActionBirthday'), value: birthdayCount },
+    { icon: StarIcon, label: t('assistantChat.quickActionImportant'), value: importantCount },
+    { icon: ForumIcon, label: t('assistantChat.quickActionInteractions'), value: interactions.length },
+  ];
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 64px)', pb: { xs: 8, md: 0 } }}>
       <Typography variant="h5" sx={{ p: 2, pb: 1 }}>
@@ -83,9 +124,82 @@ export function AssistantChatScreen() {
 
       <Box sx={{ flex: 1, overflowY: 'auto', px: 2, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
         {messages.length === 0 && (
-          <Typography color="text.secondary" sx={{ mt: 2 }}>
-            {t('assistantChat.emptyHint')}
-          </Typography>
+          <>
+            <Box
+              sx={{
+                borderRadius: 4,
+                p: 2.5,
+                mb: 1,
+                background: `linear-gradient(180deg, ${PRIMARY_SOFT}, transparent)`,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 2,
+              }}
+            >
+              <Avatar sx={{ width: 44, height: 44, backgroundImage: PRIMARY_GRADIENT }}>
+                <AutoAwesomeIcon />
+              </Avatar>
+              <Box>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                  {t('assistantChat.greeting')}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {t('assistantChat.greetingSub')}
+                </Typography>
+              </Box>
+            </Box>
+
+            <Typography variant="subtitle2" color="text.secondary" sx={{ mt: 1 }}>
+              {t('assistantChat.suggestionsTitle')}
+            </Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              {SUGGESTED_QUESTIONS_KEYS.map((key) => (
+                <Box
+                  key={key}
+                  onClick={() => ask(t(`assistantChat.${key}`))}
+                  sx={{
+                    bgcolor: PRIMARY_SOFT,
+                    color: 'primary.main',
+                    borderRadius: 3,
+                    px: 2,
+                    py: 1.25,
+                    fontSize: '0.9rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {t(`assistantChat.${key}`)}
+                </Box>
+              ))}
+            </Box>
+
+            <Typography variant="subtitle2" color="text.secondary" sx={{ mt: 2 }}>
+              {t('assistantChat.quickActionsTitle')}
+            </Typography>
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}>
+              {quickActions.map(({ icon: Icon, label, value }) => (
+                <Box
+                  key={label}
+                  onClick={() => navigate('/contacts')}
+                  sx={{
+                    bgcolor: 'background.paper',
+                    borderRadius: 3,
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
+                    p: 1.75,
+                    cursor: 'pointer',
+                  }}
+                >
+                  <Icon fontSize="small" sx={{ color: 'primary.main', mb: 0.5 }} />
+                  <Typography variant="h6" sx={{ fontSize: '1.2rem' }}>
+                    {value}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {label}
+                  </Typography>
+                </Box>
+              ))}
+            </Box>
+          </>
         )}
 
         {messages.map((message, index) => (
@@ -97,7 +211,7 @@ export function AssistantChatScreen() {
             }}
           >
             {message.role === 'assistant' ? (
-              <Card variant="elevation" elevation={2} sx={{ maxWidth: '80%' }}>
+              <Card variant="elevation" elevation={0} sx={{ maxWidth: '80%' }}>
                 <CardContent>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                     <AutoAwesomeIcon fontSize="small" color="primary" />
@@ -133,7 +247,7 @@ export function AssistantChatScreen() {
                   maxWidth: '80%',
                   bgcolor: 'primary.main',
                   color: 'primary.contrastText',
-                  borderRadius: 2,
+                  borderRadius: 3,
                   px: 2,
                   py: 1,
                 }}
@@ -168,7 +282,7 @@ export function AssistantChatScreen() {
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault();
-              handleSend();
+              ask(input.trim());
             }
           }}
           disabled={loading}
@@ -176,8 +290,9 @@ export function AssistantChatScreen() {
         <IconButton
           color="primary"
           aria-label={t('assistantChat.send')}
-          onClick={handleSend}
+          onClick={() => ask(input.trim())}
           disabled={loading || !input.trim()}
+          sx={{ bgcolor: 'primary.main', color: '#fff', '&:hover': { bgcolor: 'primary.dark' } }}
         >
           <SendIcon />
         </IconButton>

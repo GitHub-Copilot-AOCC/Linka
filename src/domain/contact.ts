@@ -148,6 +148,27 @@ export function recentContacts(contacts: Contact[], limit = 5): Contact[] {
   return [...contacts].sort((a, b) => b.createdAt - a.createdAt).slice(0, limit);
 }
 
+/** 過去 days 天內新增的聯絡人數量（供首頁/AI 助理儀表板的「最近新增」統計卡使用）。 */
+export function countRecentlyAddedContacts(contacts: Contact[], days = 30): number {
+  const threshold = Date.now() - days * 86400000;
+  return contacts.filter((c) => c.createdAt >= threshold).length;
+}
+
+/** 本月壽星人數（依生日的月份比對，不管年份），供首頁/AI 助理儀表板的統計卡使用。 */
+export function countBirthdaysThisMonth(contacts: Contact[], todayIso: string): number {
+  const currentMonth = Number(todayIso.split('-')[1]);
+  return contacts.filter((c) => {
+    if (!c.birthday) return false;
+    const month = Number(c.birthday.split('-')[1]);
+    return month === currentMonth;
+  }).length;
+}
+
+/** 重要聯絡人（星級 >= 4）人數，供首頁/AI 助理儀表板的統計卡使用。 */
+export function countImportantContacts(contacts: Contact[]): number {
+  return contacts.filter((c) => c.importance >= 4).length;
+}
+
 export interface UpcomingBirthday {
   contact: Contact;
   daysUntil: number;

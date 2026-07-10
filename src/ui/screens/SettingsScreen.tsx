@@ -10,7 +10,9 @@ import {
   ToggleButton,
   ToggleButtonGroup,
   LinearProgress,
+  Avatar,
 } from '@mui/material';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@ui/store/authStore';
 import { useUsageQuotaStore } from '@ui/store/usageQuotaStore';
@@ -20,6 +22,25 @@ import { useTagsStore } from '@ui/store/tagsStore';
 import { SyncStatusChip } from '@ui/components/SyncStatusChip';
 import { OperationLogDialog } from '@ui/components/OperationLogDialog';
 import { exportContactsToExcel } from '@platform/exportContacts';
+import { avatarGradientFor } from '@ui/theme/avatarPalette';
+
+/** iOS 風格「Grouped List」欄位群組容器，跟編輯聯絡人表單共用同一套視覺語言（見使用者提供
+ * 的設計 mockup：設定頁改成個人資料列 + 分組卡片，而不是單一長串清單）。 */
+function SettingsGroup({ children }: { children: React.ReactNode }) {
+  return (
+    <Box
+      sx={{
+        bgcolor: 'background.paper',
+        borderRadius: 3,
+        overflow: 'hidden',
+        mb: 2,
+        boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
+      }}
+    >
+      <List disablePadding>{children}</List>
+    </Box>
+  );
+}
 
 /** 設定畫面：帳號資訊、同步狀態、AI 用量、操作歷史入口、語言切換、資料匯出、登出（見 spec.md §11.2、§3、§5.12）。 */
 export function SettingsScreen() {
@@ -90,11 +111,19 @@ export function SettingsScreen() {
         {t('settings.title')}
       </Typography>
 
-      <List>
-        <ListItem>
-          <ListItemText primary={t('settings.account')} secondary={user.email} />
+      <SettingsGroup>
+        <ListItem sx={{ py: 1.5 }}>
+          <Avatar
+            sx={{ width: 48, height: 48, mr: 2, backgroundImage: avatarGradientFor(user.uid), color: '#fff' }}
+          >
+            {(user.email ?? '?').charAt(0).toUpperCase()}
+          </Avatar>
+          <ListItemText primary={user.email} secondary={t('settings.account')} />
+          <ChevronRightIcon sx={{ color: 'text.secondary' }} />
         </ListItem>
-        <Divider component="li" />
+      </SettingsGroup>
+
+      <SettingsGroup>
         <ListItem
           secondaryAction={
             <ToggleButtonGroup
@@ -136,7 +165,9 @@ export function SettingsScreen() {
         <ListItem secondaryAction={<SyncStatusChip />}>
           <ListItemText primary={t('settings.syncStatus')} />
         </ListItem>
-        <Divider component="li" />
+      </SettingsGroup>
+
+      <SettingsGroup>
         <ListItem
           secondaryAction={
             <Button size="small" onClick={() => setLogOpen(true)}>
@@ -156,11 +187,24 @@ export function SettingsScreen() {
         >
           <ListItemText primary={t('settings.exportContacts')} secondary={t('settings.exportDescription')} />
         </ListItem>
-      </List>
+      </SettingsGroup>
 
-      <Button variant="outlined" color="error" onClick={() => logout()} sx={{ mt: 2 }}>
-        {t('settings.logout')}
-      </Button>
+      <Box
+        sx={{
+          bgcolor: 'background.paper',
+          borderRadius: 3,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
+        }}
+      >
+        <Button
+          fullWidth
+          color="error"
+          onClick={() => logout()}
+          sx={{ py: 1.5, fontWeight: 700, borderRadius: 3 }}
+        >
+          {t('settings.logout')}
+        </Button>
+      </Box>
 
       <OperationLogDialog uid={user.uid} open={logOpen} onClose={() => setLogOpen(false)} />
     </Box>
