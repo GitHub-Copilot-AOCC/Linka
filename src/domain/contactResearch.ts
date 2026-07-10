@@ -27,10 +27,13 @@ const SYSTEM_INSTRUCTION = `你是 Linka 個人人脈管理 App 的 AI 助手，
 - 摘要完成後，另起一行，以「來源：」開頭，逐行列出你實際查詢到並引用的完整網址（每行一個網址），供使用者自行查證；
   若回覆「${NO_RESULTS_MARKER}」則不需要來源清單
 - 接著另起一行，以「${EXTRACTED_FIELDS_MARKER}」開頭，輸出一段 JSON（不要用 markdown code fence 包住），
-  格式為 {"role":"","company":"","linkedin":"","facebook":"","twitter":"","birthday":""}，填入你在搜尋
-  過程中從可信來源（尤其是 LinkedIn/Facebook 本人頁面）確認找到的欄位值；birthday 請用 YYYY-MM-DD 格式，
-  只有明確查到完整生日時才填，只查到月日或需要猜測都留空；找不到、不確定、或需要猜測的欄位一律留空字串，
-  絕對不可編造；若回覆「${NO_RESULTS_MARKER}」則不需要這個區塊`;
+  格式為 {"role":"","company":"","phone":"","email":"","linkedin":"","facebook":"","twitter":"","birthday":""}，
+  填入你在搜尋過程中從可信來源（尤其是 LinkedIn/Facebook 本人頁面）確認找到的欄位值；birthday 請用
+  YYYY-MM-DD 格式，只有明確查到完整生日時才填，只查到月日或需要猜測都留空；phone、email 這兩項誤植成
+  同名同姓另一個人的風險特別高，只有在來源明確、直接把這個電話/Email 標示為這位聯絡人本人所有時才填
+  （例如他本人的官方簡介頁、公司員工目錄、LinkedIn 聯絡資訊區塊），不可用網頁上恰好出現在附近、但沒有
+  明確歸屬的聯絡方式；找不到、不確定、或需要猜測的欄位一律留空字串，絕對不可編造；若回覆
+  「${NO_RESULTS_MARKER}」則不需要這個區塊`;
 
 /** 依聯絡人已知資訊組出送給 Gemini 的搜尋 prompt 與 systemInstruction。 */
 export function buildContactResearchPrompt(contact: Contact): { prompt: string; systemInstruction: string } {
@@ -47,7 +50,7 @@ ${profileLines.join('\n')}`;
 }
 
 export type ExtractedContactFields = Partial<
-  Pick<Contact, 'role' | 'company' | 'linkedin' | 'facebook' | 'twitter' | 'birthday'>
+  Pick<Contact, 'role' | 'company' | 'phone' | 'email' | 'linkedin' | 'facebook' | 'twitter' | 'birthday'>
 >;
 
 export interface ContactResearchResult {
@@ -57,7 +60,7 @@ export interface ContactResearchResult {
   noResultsFound: boolean;
 }
 
-const EXTRACTABLE_KEYS = ['role', 'company', 'linkedin', 'facebook', 'twitter', 'birthday'] as const;
+const EXTRACTABLE_KEYS = ['role', 'company', 'phone', 'email', 'linkedin', 'facebook', 'twitter', 'birthday'] as const;
 
 /** 把 [EXTRACTED_FIELDS] 標記跟後面的 JSON 從摘要文字中切出來，解析失敗就當作沒找到，
  *  不影響摘要本身正常顯示（跟現有 sourceUrls 解析失敗時的容錯邏輯是同一個精神）。 */

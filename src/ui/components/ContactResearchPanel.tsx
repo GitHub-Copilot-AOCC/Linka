@@ -30,6 +30,8 @@ type ExtractableKey = keyof ExtractedContactFields;
 const FIELD_LABEL_KEYS: Record<ExtractableKey, string> = {
   role: 'editContact.role',
   company: 'contacts.company',
+  phone: 'editContact.phone',
+  email: 'auth.email',
   linkedin: 'editContact.linkedin',
   facebook: 'editContact.facebook',
   twitter: 'editContact.twitter',
@@ -69,14 +71,10 @@ export function ContactResearchPanel({ uid, contact, active }: ContactResearchPa
       await appendResearchEntry(uid, contact.id, existingLog, entry);
 
       if (entry.extractedFields && Object.keys(entry.extractedFields).length > 0) {
-        // 只自動勾選聯絡人「目前欄位是空白」的候選；已經有值的欄位仍顯示候選，但預設
-        // 不勾選，需要使用者主動勾選才會覆蓋既有資料（跟 iOS 版一致的覆蓋行為）。
-        const initialSelected = new Set<ExtractableKey>();
-        for (const key of Object.keys(entry.extractedFields) as ExtractableKey[]) {
-          if (!contact[key]) initialSelected.add(key);
-        }
+        // 不管聯絡人目前欄位是否空白，全部不預先勾選——每一項都要使用者自己勾過才會
+        // 套用，不要因為欄位原本是空的就自動幫使用者決定（跟 iOS 版一致的行為）。
         setPendingFields(entry.extractedFields);
-        setSelectedKeys(initialSelected);
+        setSelectedKeys(new Set());
       }
     } catch (err) {
       setError(err instanceof GeminiServiceError ? err.message : t('contactResearch.genericError'));
