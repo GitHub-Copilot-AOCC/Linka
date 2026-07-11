@@ -59,7 +59,11 @@
     "statInteractions": "Interactions",
     "statBirthdays": "Birthdays this month",
     "statImportant": "Important contacts",
-    "viewAll": "View ›"
+    "viewAll": "View ›",
+    "recentContactsListTitle": "Recently added contacts",
+    "upcomingBirthdaysListTitle": "Upcoming birthdays",
+    "birthdayToday": "Birthday today",
+    "daysUntilBirthday": "In {{days}} days"
   },
   "reminders": {
     "title": "People to contact today",

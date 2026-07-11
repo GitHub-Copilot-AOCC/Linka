@@ -16,10 +16,12 @@ import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import { useTranslation } from 'react-i18next';
 import { useContactsStore } from '@ui/store/contactsStore';
 import { compressImage } from '@platform/imageCompression';
+import { cropImageToBox } from '@platform/imageCropping';
 import { pickFile } from '@platform/filePicker';
 import { scanBusinessCard, GeminiServiceError } from '@services/geminiService';
-import type { BusinessCardFields } from '@domain/businessCard';
-import { findContactsByName } from '@domain/contact';
+import type { BusinessCardFields, NormalizedBox } from '@domain/businessCard';
+import { findContactsByName, type ContactPhoto } from '@domain/contact';
+import { uploadContactPhoto } from '@data/contactsRepository';
 
 interface BusinessCardScanDialogProps {
   uid: string;
@@ -49,6 +51,9 @@ export function BusinessCardScanDialog({ uid, open, onClose }: BusinessCardScanD
   const { add, contacts } = useContactsStore();
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [fields, setFields] = useState<BusinessCardFields | null>(null);
+  const [imageBlob, setImageBlob] = useState<Blob | null>(null);
+  const [cardBox, setCardBox] = useState<NormalizedBox | undefined>(undefined);
+  const [personBox, setPersonBox] = useState<NormalizedBox | undefined>(undefined);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,6 +61,9 @@ export function BusinessCardScanDialog({ uid, open, onClose }: BusinessCardScanD
   function resetState() {
     setPreviewUrl(null);
     setFields(null);
+    setImageBlob(null);
+    setCardBox(undefined);
+    setPersonBox(undefined);
     setLoading(false);
     setSaving(false);
     setError(null);
@@ -78,16 +86,21 @@ export function BusinessCardScanDialog({ uid, open, onClose }: BusinessCardScanD
     setLoading(true);
     setError(null);
     setFields(null);
+    setCardBox(undefined);
+    setPersonBox(undefined);
 
     try {
       const compressed = await compressImage(file);
       setPreviewUrl(URL.createObjectURL(compressed));
+      setImageBlob(compressed);
       const base64Data = await blobToBase64(compressed);
       const result = await scanBusinessCard(base64Data, 'image/jpeg');
       if (!result) {
         setError(t('businessCard.noNameError'));
       } else {
-        setFields(result);
+        setFields(result.fields);
+        setCardBox(result.cardBoundingBox);
+        setPersonBox(result.personPhotoBoundingBox);
       }
     } catch (err) {
       setError(err instanceof GeminiServiceError ? err.message : t('businessCard.genericError'));
@@ -113,10 +126,31 @@ export function BusinessCardScanDialog({ uid, open, onClose }: BusinessCardScanD
         email: fields.email || undefined,
         source: 'ocr',
       });
-      if (!result.ok) {
+      if (!result.ok || !result.id) {
         setError(Object.values(result.errors ?? {})[0] ?? t('businessCard.genericError'));
         return;
       }
+
+      // 聯絡人存檔成功後才裁切/上傳照片（見使用者需求：先進表單、存檔成功才上傳照片），
+      // 避免使用者最後放棄這筆掃描時留下孤兒 Storage 檔案。照片裁切/上傳失敗不影響已經
+      // 成功建立的聯絡人紀錄，只記錄錯誤、不擋住關閉對話框的流程。人像照（若偵測到）排
+      // 第一張當大頭照，名片全圖排第二張；框不合理時 cropImageToBox 會被跳過，改用原圖。
+      if (imageBlob) {
+        try {
+          const photos: ContactPhoto[] = [];
+          if (personBox) {
+            const personPhoto = await cropImageToBox(imageBlob, personBox).catch(() => null);
+            if (personPhoto) {
+              photos.push(await uploadContactPhoto(uid, result.id, personPhoto, photos));
+            }
+          }
+          const cardPhotoBlob = cardBox ? await cropImageToBox(imageBlob, cardBox).catch(() => imageBlob) : imageBlob;
+          await uploadContactPhoto(uid, result.id, cardPhotoBlob, photos);
+        } catch (photoErr) {
+          console.error('Business card photo upload failed:', photoErr);
+        }
+      }
+
       handleClose();
     } finally {
       setSaving(false);

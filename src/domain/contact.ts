@@ -150,9 +150,14 @@ export function sortContacts(contacts: Contact[], sortBy: ContactSortBy): Contac
   return [...contacts].sort((a, b) => a.name.localeCompare(b.name));
 }
 
-/** 依建立時間新到舊排序，取前 limit 筆，供首頁「最近新增的聯絡人」使用。 */
-export function recentContacts(contacts: Contact[], limit = 5): Contact[] {
-  return [...contacts].sort((a, b) => b.createdAt - a.createdAt).slice(0, limit);
+/**
+ * 過去 windowHours 小時內新增的聯絡人，新到舊排序，供首頁「最近新增的聯絡人」清單使用。
+ * 用真正的滾動時間窗口（比對 createdAt 的毫秒差）取代「不管多舊、直接取最新 N 位」的舊邏輯
+ * （見使用者回報：舊版即使聯絡人是好幾個月前加的，只要是資料庫裡最新的幾筆還是會被列進來）。
+ */
+export function contactsAddedWithinHours(contacts: Contact[], nowMs: number, windowHours = 72): Contact[] {
+  const threshold = nowMs - windowHours * 3600_000;
+  return contacts.filter((c) => c.createdAt >= threshold).sort((a, b) => b.createdAt - a.createdAt);
 }
 
 /** 過去 days 天內新增的聯絡人數量（供首頁/AI 助理儀表板的「最近新增」統計卡使用）。 */

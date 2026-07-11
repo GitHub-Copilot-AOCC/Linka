@@ -117,7 +117,7 @@ export async function uploadContactPhoto(
   contactId: string,
   blob: Blob,
   existingPhotos: ContactPhoto[]
-): Promise<void> {
+): Promise<ContactPhoto> {
   if (!storage) throw new Error('Firebase Storage is not configured');
   const photoId = `${Date.now()}`;
   const path = `users/${uid}/contacts/${contactId}/photos/${photoId}.jpg`;
@@ -127,6 +127,7 @@ export async function uploadContactPhoto(
 
   const photo: ContactPhoto = { url, source: 'upload', addedAt: Date.now() };
   await updateContact(uid, contactId, { photos: [...existingPhotos, photo] });
+  return photo;
 }
 
 /**

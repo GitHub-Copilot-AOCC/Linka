@@ -59,7 +59,11 @@
     "statInteractions": "互動紀錄",
     "statBirthdays": "本月生日",
     "statImportant": "重要聯絡人",
-    "viewAll": "查看 ›"
+    "viewAll": "查看 ›",
+    "recentContactsListTitle": "最近新增的聯絡人",
+    "upcomingBirthdaysListTitle": "即將到來的生日",
+    "birthdayToday": "今天生日",
+    "daysUntilBirthday": "{{days}} 天後"
   },
   "reminders": {
     "title": "今天該聯絡的人",

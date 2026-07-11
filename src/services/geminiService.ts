@@ -5,8 +5,8 @@ import type { Contact } from '@domain/contact';
 import type { Interaction } from '@domain/interaction';
 import type { TopicSuggestion } from '@domain/topicSuggestion';
 import { buildTopicSuggestionPrompt, parseTopicSuggestions } from '@domain/topicSuggestion';
-import type { BusinessCardFields } from '@domain/businessCard';
-import { BUSINESS_CARD_EXTRACTION_PROMPT, parseBusinessCardFields } from '@domain/businessCard';
+import type { BusinessCardScanResult } from '@domain/businessCard';
+import { BUSINESS_CARD_EXTRACTION_PROMPT, parseBusinessCardScanResult } from '@domain/businessCard';
 import type { ContactLite, ContactQueryPlan, AssistantAnswer } from '@domain/assistantChat';
 import { buildQueryPlanPrompt, parseQueryPlan, buildAnswerPrompt, parseAssistantAnswer } from '@domain/assistantChat';
 import type { DocumentTypeHint, ParsedDocumentContact } from '@domain/documentImport';
@@ -56,14 +56,17 @@ export async function suggestTopics(contact: Contact, interactions: Interaction[
   return parseTopicSuggestions(raw);
 }
 
-/** 名片 OCR（見 spec.md §5.5 項目1）：回傳辨識出的欄位供使用者確認，不寫入任何資料。 */
-export async function scanBusinessCard(base64Data: string, mimeType: string): Promise<BusinessCardFields | null> {
+/**
+ * 名片 OCR（見 spec.md §5.5 項目1）：回傳辨識出的欄位 + 名片/人像照裁切用座標框，
+ * 供使用者確認，不寫入任何資料。
+ */
+export async function scanBusinessCard(base64Data: string, mimeType: string): Promise<BusinessCardScanResult | null> {
   const raw = await callGeminiProxy('extractContactFromCard', {
     base64Data,
     mimeType,
     prompt: BUSINESS_CARD_EXTRACTION_PROMPT,
   });
-  return parseBusinessCardFields(raw);
+  return parseBusinessCardScanResult(raw);
 }
 
 /**
