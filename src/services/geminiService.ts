@@ -87,9 +87,10 @@ export async function planContactQuery(question: string, contacts: ContactLite[]
 export async function answerContactQuestion(
   question: string,
   contacts: Parameters<typeof buildAnswerPrompt>[1],
-  interactionsByContactId: Parameters<typeof buildAnswerPrompt>[2]
+  interactionsByContactId: Parameters<typeof buildAnswerPrompt>[2],
+  tagNameById?: Parameters<typeof buildAnswerPrompt>[3]
 ): Promise<AssistantAnswer> {
-  const { prompt, systemInstruction } = buildAnswerPrompt(question, contacts, interactionsByContactId);
+  const { prompt, systemInstruction } = buildAnswerPrompt(question, contacts, interactionsByContactId, tagNameById);
   const raw = await callGeminiProxy('answerContactQuestion', { prompt, systemInstruction });
   return parseAssistantAnswer(raw);
 }

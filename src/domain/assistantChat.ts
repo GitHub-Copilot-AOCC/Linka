@@ -129,11 +129,27 @@ export function selectRelevantContacts(contacts: Contact[], plan: ContactQueryPl
   return matches.slice(0, MAX_CONTACTS_IN_ANSWER_CONTEXT);
 }
 
-/** 組生成回答階段（第二階段）的 prompt，僅包含篩選後的聯絡人子集，控制 prompt 大小。 */
+// 網路研究摘要只帶「最近一筆、截斷前 300 字」給 AI（見使用者要求）：researchLog 會隨時間
+// 持續累加、沒有筆數上限（spec.md §10 待確認事項 #4），若每次問答都把全部歷史摘要整包塞進
+// prompt，token 成本會隨聯絡人使用時間線性膨脹，且大部分內容跟當次問題無關，容易讓
+// gemini-3.1-flash-lite 這種輕量模型分心，回答品質反而變差。
+const RESEARCH_SUMMARY_MAX_CHARS = 300;
+
+function latestResearchSummarySnippet(researchLog: Contact['researchLog']): string | null {
+  if (!researchLog || researchLog.length === 0) return null;
+  const latest = [...researchLog].sort((a, b) => b.createdAt - a.createdAt)[0];
+  const truncated = latest.summary.slice(0, RESEARCH_SUMMARY_MAX_CHARS);
+  return truncated.length < latest.summary.length ? `${truncated}…` : truncated;
+}
+
+/** 組生成回答階段（第二階段）的 prompt，僅包含篩選後的聯絡人子集，控制 prompt 大小。
+ *  tagNameById：Contact.tags 存的是標籤 id，這裡需要呼叫端提供 id → 名稱的對照表才能把
+ *  人看得懂的標籤名稱（而不是內部 id）交給 AI；沒有提供或查不到就略過該筆標籤。 */
 export function buildAnswerPrompt(
   question: string,
   contacts: Contact[],
-  interactionsByContactId: Record<string, Interaction[]>
+  interactionsByContactId: Record<string, Interaction[]>,
+  tagNameById: Record<string, string> = {}
 ): { prompt: string; systemInstruction: string } {
   const contactBlocks = contacts.map((c) => {
     const interactions = (interactionsByContactId[c.id] ?? [])
@@ -143,13 +159,24 @@ export function buildAnswerPrompt(
       .map((i) => `  - ${i.date}（${i.type}）：${i.description}`)
       .join('\n');
 
+    const tagNames = (c.tags ?? []).map((id) => tagNameById[id]).filter((name): name is string => Boolean(name));
+    const researchSnippet = latestResearchSummarySnippet(c.researchLog);
+
     const profileLines = [
       `姓名：${c.name}`,
       c.role ? `職稱：${c.role}` : null,
       c.company ? `公司：${c.company}` : null,
+      c.phone ? `電話：${c.phone}` : null,
+      c.email ? `Email：${c.email}` : null,
+      c.birthday ? `生日：${c.birthday}` : null,
+      c.linkedin ? `LinkedIn：${c.linkedin}` : null,
+      c.facebook ? `Facebook：${c.facebook}` : null,
+      c.twitter ? `Twitter：${c.twitter}` : null,
+      tagNames.length > 0 ? `標籤：${tagNames.join('、')}` : null,
       c.notes ? `備註：${c.notes}` : null,
       `重要性星級：${c.importance}`,
       c.nextContactReminder ? `下次聯絡提醒：${c.nextContactReminder}` : null,
+      researchSnippet ? `最近一筆網路研究摘要（節錄）：${researchSnippet}` : null,
     ]
       .filter(Boolean)
       .join('\n');

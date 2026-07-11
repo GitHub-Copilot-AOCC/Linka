@@ -22,6 +22,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@ui/store/authStore';
 import { useContactsStore } from '@ui/store/contactsStore';
 import { useInteractionsStore } from '@ui/store/interactionsStore';
+import { useTagsStore } from '@ui/store/tagsStore';
 import { fetchInteractionsForContacts } from '@data/interactionsRepository';
 import { planContactQuery, answerContactQuestion, GeminiServiceError } from '@services/geminiService';
 import { selectRelevantContacts, toContactLite, type ChatMessage } from '@domain/assistantChat';
@@ -49,6 +50,7 @@ export function AssistantChatScreen() {
   const { user } = useAuthStore();
   const { contacts, subscribe } = useContactsStore();
   const { all: interactions, subscribeAll: subscribeInteractions } = useInteractionsStore();
+  const { tags, subscribe: subscribeTags } = useTagsStore();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -64,6 +66,11 @@ export function AssistantChatScreen() {
     if (!user) return;
     return subscribeInteractions(user.uid);
   }, [user, subscribeInteractions]);
+
+  useEffect(() => {
+    if (!user) return;
+    return subscribeTags(user.uid);
+  }, [user, subscribeTags]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -87,8 +94,9 @@ export function AssistantChatScreen() {
         user.uid,
         relevantContacts.map((c) => c.id)
       );
-      // 第二階段：生成有引用來源的回答。
-      const result = await answerContactQuestion(question, relevantContacts, interactionsByContactId);
+      // 第二階段：生成有引用來源的回答。tagNameById 把 Contact.tags 存的標籤 id 轉成人看得懂的名稱。
+      const tagNameById = Object.fromEntries(tags.map((tag) => [tag.id, tag.name]));
+      const result = await answerContactQuestion(question, relevantContacts, interactionsByContactId, tagNameById);
 
       setMessages((prev) => [...prev, { role: 'assistant', text: result.answer, citations: result.citations }]);
     } catch (err) {
