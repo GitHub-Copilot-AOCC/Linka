@@ -230,21 +230,29 @@ export function AssistantChatScreen() {
                   </Typography>
                   {message.citations && message.citations.length > 0 && (
                     <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mt: 1.5 }}>
-                      {message.citations.map((citation, i) => (
-                        <Chip
-                          key={i}
-                          size="small"
-                          variant="outlined"
-                          label={
-                            citation.interactionDate
-                              ? t('assistantChat.citationWithDate', {
-                                  name: citation.contactName,
-                                  date: citation.interactionDate,
-                                })
-                              : citation.contactName
-                          }
-                        />
-                      ))}
+                      {message.citations.map((citation, i) => {
+                        // citation 只有 contactName 文字，沒有 contactId，用姓名比對目前的
+                        // 聯絡人清單找出 id（見使用者回報：引用來源的 chip 點了沒反應）；
+                        // 找不到同名聯絡人（例如已被刪除）就不給點。
+                        const contact = contacts.find((c) => c.name === citation.contactName);
+                        return (
+                          <Chip
+                            key={i}
+                            size="small"
+                            variant="outlined"
+                            clickable={Boolean(contact)}
+                            onClick={contact ? () => navigate(`/contacts/${contact.id}`) : undefined}
+                            label={
+                              citation.interactionDate
+                                ? t('assistantChat.citationWithDate', {
+                                    name: citation.contactName,
+                                    date: citation.interactionDate,
+                                  })
+                                : citation.contactName
+                            }
+                          />
+                        );
+                      })}
                     </Box>
                   )}
                 </CardContent>
