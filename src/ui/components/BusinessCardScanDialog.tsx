@@ -75,7 +75,10 @@ export function BusinessCardScanDialog({ uid, open, onClose }: BusinessCardScanD
   }
 
   async function handleFileSelected() {
-    const file = await pickFile({ accept: 'image/*', capture: 'environment' });
+    // 不加 capture 屬性——手機瀏覽器（尤其 iOS Safari）看到 capture 常會直接跳過選單，
+    // 只給拍照、沒有「從相片庫選取」的選項（見使用者回報：按下去只能拍照，沒有選照片的
+    // 功能）。不加這個屬性，瀏覽器會顯示原生選單（拍照／相片庫／瀏覽檔案），使用者自己選。
+    const file = await pickFile({ accept: 'image/*' });
     if (!file) return;
 
     if (!navigator.onLine) {
